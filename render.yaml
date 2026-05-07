@@ -1,0 +1,41 @@
+services:
+  # 1. The Main Neural API
+  - type: web
+    name: carbonsense-api
+    env: docker
+    dockerContext: backend
+    dockerfilePath: backend/Dockerfile
+    plan: free
+    envVars:
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: carbonsense-cache
+          property: connectionString
+      - key: OPENWEATHER_API_KEY
+        sync: false
+      - key: WEB3_PROVIDER_URL
+        sync: false
+      - key: WALLET_PRIVATE_KEY
+        sync: false
+
+  # 2. The Neural Drift Worker
+  - type: worker
+    name: carbonsense-drift-worker
+    env: docker
+    dockerContext: backend
+    dockerfilePath: backend/Dockerfile
+    dockerCommand: python workers/drift_monitor.py
+    plan: free
+    envVars:
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: carbonsense-cache
+          property: connectionString
+
+# 3. The Redis Memory Layer
+redis:
+  name: carbonsense-cache
+  plan: free
+  ipAllowList: [] # Only allow internal access

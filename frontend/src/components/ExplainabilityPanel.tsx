@@ -22,7 +22,7 @@ interface ExplanationData {
 }
 
 export default function ExplainabilityPanel({ currentInputs }: { currentInputs: Record<string, number> }) {
-  const [data, setData] = useState<any>(null)
+  const [data, setData] = useState<ExplanationData | null>(null)
   const [isReady, setIsReady] = useState(false)
 
   useEffect(() => {
@@ -36,7 +36,7 @@ export default function ExplainabilityPanel({ currentInputs }: { currentInputs: 
     return <div className="glass-panel p-6 rounded-3xl animate-pulse h-full min-h-[500px]"></div>
   }
 
-  const chartData = data.contributions.map((c) => ({
+  const chartData = data.contributions.map((c: Contribution) => ({
     name: c.feature,
     value: c.contribution,
     isPositive: c.contribution > 0

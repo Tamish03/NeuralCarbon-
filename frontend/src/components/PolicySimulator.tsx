@@ -4,21 +4,33 @@ import { fetchPolicySimulation } from "@/lib/api"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts"
 import { motion } from "framer-motion"
 
+interface PolicyResult {
+  v_value: number;
+  predicted_co2: number;
+  risk_level: string;
+}
+
+interface PolicyData {
+  results: PolicyResult[];
+  base_co2: number;
+  optimal_v: number;
+}
+
 export default function PolicySimulator({ currentInputs }: { currentInputs: Record<string, number> }) {
-  const [data, setData] = useState<any>(null)
+  const [data, setData] = useState<PolicyData | null>(null)
   const [isReady, setIsReady] = useState(false)
   
   useEffect(() => {
     fetchPolicySimulation(currentInputs).then(res => {
       setData(res)
-      // Small timeout to ensure container has dimensions
       setTimeout(() => setIsReady(true), 100)
     }).catch(console.error)
   }, [currentInputs])
 
   if (!data) return <div className="glass-panel p-6 rounded-3xl animate-pulse h-[500px]"></div>
 
-  const minPoint = data.results.reduce((min: any, p: any) => p.predicted_co2 < min.predicted_co2 ? p : min, data.results[0])
+  const minPoint = data.results.reduce((min: PolicyResult, p: PolicyResult) => 
+    p.predicted_co2 < min.predicted_co2 ? p : min, data.results[0])
 
   return (
     <motion.div 

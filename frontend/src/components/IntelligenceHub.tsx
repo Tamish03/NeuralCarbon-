@@ -12,9 +12,15 @@ interface SystemMetrics {
   avg_prediction_co2: number;
 }
 
+interface DriftStatus {
+  drift_detected: boolean;
+  drift_score: number;
+  last_check: string;
+}
+
 export default function IntelligenceHub() {
   const [metrics, setMetrics] = useState<SystemMetrics | null>(null)
-  const [drift, setDrift] = useState<any>(null)
+  const [drift, setDrift] = useState<DriftStatus | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -114,7 +120,7 @@ export default function IntelligenceHub() {
   )
 }
 
-function MetricCard({ icon, label, value, unit = "", urgent = false }: { icon: React.ReactNode, label: string, value: any, unit?: string, urgent?: boolean }) {
+function MetricCard({ icon, label, value, unit = "", urgent = false }: { icon: React.ReactNode, label: string, value: string | number, unit?: string, urgent?: boolean }) {
   return (
     <div className="group/metric p-5 bg-white/[0.02] hover:bg-white/[0.05] rounded-2xl border border-white/5 transition-all duration-300 h-full flex flex-col justify-between">
       <div className="flex items-center gap-2 text-neutral-500 mb-3">
