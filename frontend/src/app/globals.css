@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+@theme {
+  /* Deep forest green background */
+  --color-background: #022c22;
+  --color-foreground: #ecfdf5;
+  
+  /* Eco glassmorphism panels */
+  --color-panel: rgba(16, 185, 129, 0.03);
+  --color-panel-border: rgba(16, 185, 129, 0.15);
+  
+  /* Vibrant leaf green for primary actions */
+  --color-primary: #10b981;
+  --color-primary-hover: #34d399;
+  
+  --color-status-low: #10b981;
+  --color-status-med: #eab308;
+  --color-status-high: #ef4444;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background: linear-gradient(135deg, #022c22 0%, #064e3b 50%, #022c22 100%);
+  background-attachment: fixed;
+  color: var(--color-foreground);
+  font-family: var(--font-geist-sans), 'Inter', sans-serif;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* Glassmorphism Utility */
+.glass-panel {
+  background: rgba(6, 78, 59, 0.15);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(16, 185, 129, 0.12);
+  box-shadow: 
+    0 4px 30px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(16, 185, 129, 0.05);
+}
+
+/* Eco glow effect on hover */
+.glass-panel:hover {
+  border-color: rgba(16, 185, 129, 0.2);
+  box-shadow: 
+    0 4px 30px rgba(0, 0, 0, 0.15),
+    0 0 20px rgba(16, 185, 129, 0.05),
+    inset 0 1px 0 rgba(16, 185, 129, 0.08);
+  transition: all 0.4s ease;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(2, 44, 34, 0.3);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(16, 185, 129, 0.2);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(16, 185, 129, 0.4);
+}
+
+/* Glow text utility */
+.text-glow-green {
+  text-shadow: 0 0 12px rgba(16, 185, 129, 0.5), 0 0 30px rgba(16, 185, 129, 0.2);
+}
+
+/* Selection color */
+::selection {
+  background: rgba(16, 185, 129, 0.3);
+  color: #ecfdf5;
+}

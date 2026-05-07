@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NeuralCarbon — System Blueprint</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #060a0f;
+  --bg2:      #080e17;
+  --card:     #0b1420;
+  --card2:    #0f1c2d;
+  --border:   #142235;
+  --border2:  #1e344f;
+  --teal:     #00e5b0;
+  --blue:     #3b9eff;
+  --amber:    #f0a500;
+  --red:      #ff4d6a;
+  --violet:   #9d7dff;
+  --pink:     #ff6eb4;
+  --green:    #22d06e;
+  --t1:       #e8f4ff;
+  --t2:       #607d9a;
+  --t3:       #2d4a65;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Instrument Sans', sans-serif;
+  --display: 'Syne', sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--t1);font-family:var(--sans);line-height:1.6;overflow-x:hidden}
+
+/* NOISE TEXTURE */
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:0;opacity:.4
+}
+
+/* SCROLL INDICATOR */
+.scroll-progress{position:fixed;top:0;left:0;height:2px;background:var(--teal);z-index:999;transition:width .1s}
+
+/* NAV */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  padding:0 40px;height:56px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(6,10,15,.85);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border)
+}
+.nav-logo{font-family:var(--display);font-size:16px;font-weight:800;color:var(--teal);letter-spacing:-.3px;display:flex;align-items:center;gap:8px}
+.nav-logo-dot{width:8px;height:8px;border-radius:50%;background:var(--teal);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+.nav-links{display:flex;gap:6px}
+.nav-link{padding:5px 12px;font-size:12px;color:var(--t2);cursor:pointer;border-radius:6px;border:1px solid transparent;transition:all .15s;font-family:var(--sans);text-decoration:none}
+.nav-link:hover,.nav-link.active{color:var(--t1);border-color:var(--border2);background:var(--card)}
+
+/* HERO */
+.hero{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  padding:100px 40px 60px;text-align:center;position:relative;
+  background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(0,229,176,.06) 0%,transparent 70%)
+}
+.hero-tag{
+  display:inline-flex;align-items:center;gap:7px;
+  font-family:var(--mono);font-size:11px;color:var(--teal);
+  background:rgba(0,229,176,.08);border:1px solid rgba(0,229,176,.2);
+  padding:5px 14px;border-radius:99px;margin-bottom:28px;letter-spacing:.5px
+}
+.hero h1{
+  font-family:var(--display);font-size:clamp(42px,6vw,76px);
+  font-weight:800;line-height:1.05;letter-spacing:-2.5px;
+  margin-bottom:20px;
+  background:linear-gradient(135deg,#e8f4ff 30%,var(--teal) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text
+}
+.hero-sub{font-size:17px;color:var(--t2);max-width:640px;margin:0 auto 40px;line-height:1.7}
+.hero-badges{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:60px}
+.hb{
+  font-size:11.5px;font-family:var(--mono);
+  padding:5px 14px;border-radius:99px;
+  border:1px solid;font-weight:500
+}
+.hb-teal{color:var(--teal);border-color:rgba(0,229,176,.3);background:rgba(0,229,176,.06)}
+.hb-blue{color:var(--blue);border-color:rgba(59,158,255,.3);background:rgba(59,158,255,.06)}
+.hb-violet{color:var(--violet);border-color:rgba(157,125,255,.3);background:rgba(157,125,255,.06)}
+.hb-amber{color:var(--amber);border-color:rgba(240,165,0,.3);background:rgba(240,165,0,.06)}
+
+.hero-metrics{
+  display:flex;gap:40px;justify-content:center;flex-wrap:wrap;
+  padding:28px 40px;background:var(--card);border:1px solid var(--border);
+  border-radius:16px;max-width:700px;margin:0 auto
+}
+.hm{text-align:center}
+.hm-n{font-family:var(--display);font-size:32px;font-weight:800;color:var(--teal)}
+.hm-l{font-size:11px;color:var(--t2);font-family:var(--mono);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+
+/* SECTIONS */
+.section{padding:80px 40px;max-width:1200px;margin:0 auto}
+.section-tag{
+  font-family:var(--mono);font-size:11px;color:var(--teal);
+  letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;
+  display:flex;align-items:center;gap:8px
+}
+.section-tag::before{content:'';width:20px;height:1px;background:var(--teal)}
+.section h2{
+  font-family:var(--display);font-size:clamp(28px,3.5vw,44px);
+  font-weight:800;letter-spacing:-1.5px;margin-bottom:14px
+}
+.section-desc{font-size:15px;color:var(--t2);max-width:600px;margin-bottom:48px;line-height:1.7}
+
+/* DIVIDER */
+.divider{height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:0 40px}
+
+/* PRODUCT IDEA CARD */
+.product-card{
+  background:linear-gradient(135deg,var(--card) 0%,var(--card2) 100%);
+  border:1px solid var(--border2);border-radius:20px;padding:40px;
+  position:relative;overflow:hidden
+}
+.product-card::before{
+  content:'';position:absolute;top:-60px;right:-60px;
+  width:200px;height:200px;border-radius:50%;
+  background:radial-gradient(circle,rgba(0,229,176,.12),transparent 70%)
+}
+.product-name{
+  font-family:var(--display);font-size:48px;font-weight:800;
+  letter-spacing:-2px;color:var(--teal);margin-bottom:8px
+}
+.product-tagline{font-size:18px;color:var(--t1);margin-bottom:24px;font-weight:500}
+.product-desc{font-size:14.5px;color:var(--t2);line-height:1.75;max-width:700px;margin-bottom:32px}
+.domain-pills{display:flex;gap:8px;flex-wrap:wrap}
+.dp{
+  font-size:12px;padding:6px 14px;border-radius:8px;
+  border:1px solid var(--border2);color:var(--t1);
+  background:rgba(255,255,255,.03);font-family:var(--mono)
+}
+
+/* ARCHITECTURE */
+.arch-diagram{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:16px;padding:32px;font-family:var(--mono);
+  font-size:12px;overflow-x:auto;margin-bottom:32px
+}
+.arch-row{display:flex;align-items:stretch;gap:0;margin-bottom:16px}
+.arch-layer{
+  flex:1;background:var(--card2);border:1px solid var(--border2);
+  border-radius:10px;padding:16px 14px;text-align:center;
+  position:relative;min-width:120px
+}
+.arch-layer-title{
+  font-size:9px;text-transform:uppercase;letter-spacing:1px;
+  color:var(--t3);margin-bottom:8px
+}
+.arch-layer-name{font-size:12px;font-weight:500;color:var(--t1);margin-bottom:6px}
+.arch-layer-items{font-size:10px;color:var(--t2);line-height:1.6}
+.arch-arrow{
+  display:flex;align-items:center;padding:0 8px;color:var(--t3);font-size:16px
+}
+.arch-section-label{
+  font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;
+  margin-bottom:8px;padding-left:4px
+}
+
+.layer-color-1{border-color:rgba(0,229,176,.3);background:rgba(0,229,176,.04)}
+.layer-color-2{border-color:rgba(59,158,255,.3);background:rgba(59,158,255,.04)}
+.layer-color-3{border-color:rgba(157,125,255,.3);background:rgba(157,125,255,.04)}
+.layer-color-4{border-color:rgba(240,165,0,.3);background:rgba(240,165,0,.04)}
+.layer-color-5{border-color:rgba(255,77,106,.3);background:rgba(255,77,106,.04)}
+
+/* FEATURE GRID */
+.feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.feat-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:14px;padding:22px;
+  transition:border-color .2s,transform .2s;cursor:default
+}
+.feat-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.feat-icon{font-size:22px;margin-bottom:12px}
+.feat-title{font-family:var(--display);font-size:15px;font-weight:700;color:var(--t1);margin-bottom:6px;letter-spacing:-.3px}
+.feat-desc{font-size:13px;color:var(--t2);line-height:1.65}
+.feat-tech{
+  margin-top:12px;font-size:11px;font-family:var(--mono);
+  color:var(--teal);background:rgba(0,229,176,.07);
+  padding:4px 10px;border-radius:6px;display:inline-block
+}
+.feat-card.wow{border-color:rgba(0,229,176,.3);background:linear-gradient(135deg,var(--card),rgba(0,229,176,.04))}
+
+/* SCREENS */
+.screens-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.screen-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:14px;overflow:hidden
+}
+.screen-header{
+  padding:14px 18px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px
+}
+.screen-dot{width:8px;height:8px;border-radius:50%}
+.screen-title{font-size:13px;font-weight:600;color:var(--t1);margin-left:4px}
+.screen-body{padding:18px}
+.screen-desc{font-size:13px;color:var(--t2);line-height:1.65;margin-bottom:14px}
+.screen-feature{
+  display:flex;align-items:flex-start;gap:8px;
+  font-size:12px;color:var(--t2);margin-bottom:7px;padding:6px 10px;
+  background:var(--card2);border-radius:7px
+}
+.screen-feature-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;margin-top:5px}
+
+/* DEPLOYMENT */
+.deploy-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.deploy-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:12px;padding:20px
+}
+.deploy-layer{font-size:10px;font-family:var(--mono);color:var(--t3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px}
+.deploy-title{font-size:14px;font-weight:600;color:var(--t1);margin-bottom:10px}
+.deploy-item{
+  font-size:12px;color:var(--t2);padding:5px 0;
+  border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px
+}
+.deploy-item:last-child{border-bottom:none}
+.deploy-badge{
+  font-size:10px;font-family:var(--mono);
+  padding:2px 7px;border-radius:4px;margin-left:auto;white-space:nowrap
+}
+.db-green{background:rgba(34,208,110,.12);color:var(--green)}
+.db-blue{background:rgba(59,158,255,.12);color:var(--blue)}
+.db-amber{background:rgba(240,165,0,.12);color:var(--amber)}
+
+/* PIPELINE */
+.pipeline-wrap{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:16px;padding:28px;overflow-x:auto
+}
+.pipeline-flow{
+  display:flex;align-items:center;gap:0;min-width:900px
+}
+.pipe-step{
+  flex:1;text-align:center;padding:14px 10px;
+  background:var(--card2);border:1px solid var(--border);
+  border-radius:10px;position:relative
+}
+.pipe-step+.pipe-step{margin-left:-1px;border-left:1px solid var(--border2)}
+.pipe-step:first-child{border-radius:10px 0 0 10px}
+.pipe-step:last-child{border-radius:0 10px 10px 0}
+.pipe-icon{font-size:18px;margin-bottom:6px}
+.pipe-name{font-size:11.5px;font-weight:600;color:var(--t1);margin-bottom:4px}
+.pipe-detail{font-size:10px;color:var(--t2);line-height:1.4}
+.pipe-step.active-step{background:rgba(0,229,176,.08);border-color:rgba(0,229,176,.35)}
+.pipe-step.active-step .pipe-name{color:var(--teal)}
+.pipe-arrow{color:var(--t3);font-size:18px;padding:0 4px;flex-shrink:0}
+
+/* MULTI-DOMAIN */
+.domain-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.domain-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:14px;padding:24px
+}
+.domain-icon-row{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.domain-emoji{font-size:28px}
+.domain-title{font-family:var(--display);font-size:17px;font-weight:700;color:var(--t1);letter-spacing:-.3px}
+.domain-subtitle{font-size:12px;color:var(--t2);margin-top:2px}
+.domain-list{list-style:none}
+.domain-list li{
+  font-size:13px;color:var(--t2);padding:6px 0;
+  border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:flex-start
+}
+.domain-list li:last-child{border-bottom:none}
+.domain-list li::before{content:'→';color:var(--teal);flex-shrink:0;font-family:var(--mono)}
+
+/* WOW FACTOR */
+.wow-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.wow-card{
+  border-radius:16px;padding:28px;
+  background:linear-gradient(135deg,var(--card) 0%,var(--card2) 100%);
+  border:1px solid;position:relative;overflow:hidden
+}
+.wow-card::after{
+  content:'';position:absolute;bottom:-30px;right:-30px;
+  width:100px;height:100px;border-radius:50%;opacity:.12
+}
+.wow-card-1{border-color:rgba(0,229,176,.4)}
+.wow-card-1::after{background:var(--teal)}
+.wow-card-2{border-color:rgba(59,158,255,.4)}
+.wow-card-2::after{background:var(--blue)}
+.wow-card-3{border-color:rgba(157,125,255,.4)}
+.wow-card-3::after{background:var(--violet)}
+.wow-number{
+  font-family:var(--display);font-size:48px;font-weight:800;
+  opacity:.15;position:absolute;top:16px;right:20px;line-height:1
+}
+.wow-label{font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+.wow-title{font-family:var(--display);font-size:20px;font-weight:700;color:var(--t1);letter-spacing:-.4px;margin-bottom:10px}
+.wow-desc{font-size:13px;color:var(--t2);line-height:1.65}
+.wow-impact{
+  margin-top:14px;font-size:11.5px;font-family:var(--mono);
+  padding:6px 12px;border-radius:7px;display:inline-block
+}
+.wi-teal{background:rgba(0,229,176,.1);color:var(--teal)}
+.wi-blue{background:rgba(59,158,255,.1);color:var(--blue)}
+.wi-violet{background:rgba(157,125,255,.1);color:var(--violet)}
+
+/* RESUME */
+.resume-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px}
+.resume-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px}
+.resume-title{font-family:var(--display);font-size:16px;font-weight:700;color:var(--t1);margin-bottom:16px;letter-spacing:-.3px}
+.resume-bullet{
+  display:flex;gap:10px;font-size:13px;color:var(--t2);
+  padding:8px 0;border-bottom:1px solid var(--border);line-height:1.5
+}
+.resume-bullet:last-child{border-bottom:none}
+.rb-dot{width:5px;height:5px;border-radius:50%;background:var(--teal);flex-shrink:0;margin-top:7px}
+
+.interview-card{
+  background:linear-gradient(135deg,rgba(0,229,176,.06),rgba(59,158,255,.04));
+  border:1px solid rgba(0,229,176,.25);border-radius:16px;padding:28px
+}
+.interview-q{font-size:14px;font-weight:600;color:var(--t1);margin-bottom:8px;font-family:var(--display)}
+.interview-a{font-size:13px;color:var(--t2);line-height:1.7;margin-bottom:20px;padding-left:16px;border-left:2px solid var(--teal)}
+
+/* CODE BLOCK */
+.code-block{
+  background:#030810;border:1px solid var(--border);border-radius:10px;
+  padding:18px 20px;font-family:var(--mono);font-size:12px;
+  color:var(--t1);line-height:1.8;overflow-x:auto;margin:16px 0
+}
+.c-kw{color:#79c0ff}.c-fn{color:#d2a8ff}.c-st{color:var(--teal)}.c-cm{color:var(--t3)}
+
+/* TABLE */
+.tech-table{width:100%;border-collapse:collapse;font-size:13px}
+.tech-table th{
+  padding:10px 14px;background:var(--card2);border-bottom:1px solid var(--border);
+  font-size:10px;text-transform:uppercase;letter-spacing:.6px;
+  color:var(--t3);text-align:left;font-family:var(--mono)
+}
+.tech-table td{
+  padding:11px 14px;border-bottom:1px solid var(--border);color:var(--t2)
+}
+.tech-table td:first-child{color:var(--t1);font-weight:500}
+.tech-table tr:last-child td{border-bottom:none}
+.tech-table tr:hover td{background:var(--card2)}
+
+/* FOOTER */
+footer{
+  padding:40px;text-align:center;border-top:1px solid var(--border);
+  font-family:var(--mono);font-size:11px;color:var(--t3)
+}
+
+/* TAGS */
+.tag-inline{
+  display:inline-block;font-family:var(--mono);font-size:10px;
+  padding:2px 8px;border-radius:4px;margin-left:6px;
+  background:rgba(0,229,176,.1);color:var(--teal)
+}
+
+/* UTIL */
+.mt8{margin-top:8px}.mt16{margin-top:16px}.mt24{margin-top:24px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.full-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:14px;padding:24px;margin-top:16px
+}
+.label{
+  font-size:10px;font-family:var(--mono);text-transform:uppercase;
+  letter-spacing:.7px;color:var(--t3);margin-bottom:8px
+}
+strong.hl{color:var(--teal)}
+</style>
+</head>
+<body>
+
+<div class="scroll-progress" id="sp"></div>
+
+<nav>
+  <div class="nav-logo"><span class="nav-logo-dot"></span>NeuralCarbon</div>
+  <div class="nav-links">
+    <a class="nav-link" href="#product">Concept</a>
+    <a class="nav-link" href="#architecture">Architecture</a>
+    <a class="nav-link" href="#features">Features</a>
+    <a class="nav-link" href="#screens">UI/UX</a>
+    <a class="nav-link" href="#deploy">Deploy</a>
+    <a class="nav-link" href="#wow">Wow Factor</a>
+    <a class="nav-link" href="#resume">Resume</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div>
+    <div class="hero-tag">🌿 Production System Blueprint · CarbonSense → NeuralCarbon</div>
+    <h1>From Notebook<br>to Startup Product</h1>
+    <p class="hero-sub">A complete production-grade architecture that transforms your 7-week ML pipeline into an autonomous industrial carbon intelligence platform — the kind that gets you hired.</p>
+    <div class="hero-badges">
+      <span class="hb hb-teal">XAI + SHAP + LIME + DiCE</span>
+      <span class="hb hb-blue">FastAPI + Docker + Redis</span>
+      <span class="hb hb-violet">Conformal Prediction</span>
+      <span class="hb hb-amber">Green ML · CodeCarbon</span>
+      <span class="hb hb-teal">ADWIN Drift Detection</span>
+      <span class="hb hb-blue">Active Learning Loop</span>
+    </div>
+    <div class="hero-metrics">
+      <div class="hm"><div class="hm-n">8</div><div class="hm-l">System Layers</div></div>
+      <div class="hm"><div class="hm-n">14</div><div class="hm-l">Advanced Features</div></div>
+      <div class="hm"><div class="hm-n">6</div><div class="hm-l">API Endpoints</div></div>
+      <div class="hm"><div class="hm-n">3</div><div class="hm-l">Wow Features</div></div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════ SECTION 1: PRODUCT IDEA ═══════════ -->
+<section class="section" id="product">
+  <div class="section-tag">01 · Product Concept</div>
+  <h2>The Product Idea</h2>
+  <p class="section-desc">Not a dashboard. An autonomous carbon decision-intelligence engine that sits between sensor data and operational decisions.</p>
+
+  <div class="product-card">
+    <div class="product-name">NeuralCarbon</div>
+    <div class="product-tagline">Autonomous Industrial Carbon Intelligence Platform</div>
+    <p class="product-desc">
+      NeuralCarbon is a production AI system where your trained LightGBM/XGBoost ensemble becomes the decision brain of an industrial operations platform. It doesn't just predict CO₂ — it <strong style="color:var(--t1)">prescribes optimal operational changes</strong>, <strong style="color:var(--t1)">simulates regulatory policy impacts</strong>, <strong style="color:var(--t1)">detects emission anomalies in real-time</strong>, and <strong style="color:var(--t1)">closes a feedback loop</strong> that makes the model smarter with every deployment cycle.<br><br>
+      The system operates in three intelligence modes: <strong style="color:var(--teal)">Predict</strong> (what will emissions be?), <strong style="color:var(--teal)">Prescribe</strong> (what should we change?), and <strong style="color:var(--teal)">Protect</strong> (what risk is approaching?). Each mode is powered by a different component of your existing pipeline — MAPIE for prediction intervals, DiCE for prescription, ADWIN for protection.
+    </p>
+    <div class="domain-pills">
+      <span class="dp">⚙️ Industrial Operations</span>
+      <span class="dp">🌍 Environmental Compliance</span>
+      <span class="dp">📈 ESG Reporting</span>
+      <span class="dp">⚖️ Carbon Credit Markets</span>
+      <span class="dp">🏛️ Regulatory Policy Simulation</span>
+      <span class="dp">💰 Cost-Emission Optimization</span>
+    </div>
+  </div>
+
+  <div class="full-card mt24">
+    <div class="label">Why This Is Rare</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:8px">
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--red);margin-bottom:8px">❌ What students build</div>
+        <div style="font-size:12.5px;color:var(--t2);line-height:1.7">Streamlit app with a slider that shows a prediction. One model. One chart. Deploy to Hugging Face. Done.</div>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--amber);margin-bottom:8px">⚡ What good engineers build</div>
+        <div style="font-size:12.5px;color:var(--t2);line-height:1.7">REST API + model serving + basic dashboard. Separate frontend and backend. Dockerized. Clean code.</div>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--teal);margin-bottom:8px">✅ What you will build</div>
+        <div style="font-size:12.5px;color:var(--t2);line-height:1.7">Autonomous decision engine with active feedback loops, drift-triggered retraining, counterfactual prescriptions, and policy simulation — all production-containerized.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════ SECTION 2: ARCHITECTURE ═══════════ -->
+<section class="section" id="architecture">
+  <div class="section-tag">02 · System Architecture</div>
+  <h2>Production Architecture</h2>
+  <p class="section-desc">8-layer architecture. Every component maps directly to code you already have in your notebook.</p>
+
+  <!-- Architecture Diagram -->
+  <div class="arch-diagram">
+    <div class="arch-section-label">LAYER 1 — DATA INGESTION</div>
+    <div class="arch-row">
+      <div class="arch-layer layer-color-1"><div class="arch-layer-title">Sensor Input</div><div class="arch-layer-name">Real-Time Stream</div><div class="arch-layer-items">AT · V · AP · RH<br>WebSocket / MQTT</div></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-layer layer-color-1"><div class="arch-layer-title">Batch Input</div><div class="arch-layer-name">Historical Upload</div><div class="arch-layer-items">CSV / Parquet<br>S3 / local file</div></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-layer layer-color-1"><div class="arch-layer-title">External API</div><div class="arch-layer-name">Weather API</div><div class="arch-layer-items">OpenWeatherMap<br>Real AT, RH, AP</div></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-layer layer-color-2"><div class="arch-layer-title">Validation Gate</div><div class="arch-layer-name">Pydantic Schema</div><div class="arch-layer-items">Range checks<br>Type enforcement</div></div>
+    </div>
+
+    <div class="arch-section-label" style="margin-top:16px">LAYER 2 — FEATURE ENGINE</div>
+    <div class="arch-row">
+      <div class="arch-layer layer-color-2"><div class="arch-layer-title">Pre-processing</div><div class="arch-layer-name">Feature Pipeline</div><div class="arch-layer-items">heat_index, AT², AT³<br>AT_V_ratio, rolling stats</div></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-layer layer-color-2"><div class="arch-layer-title">Drift Guard</div><div class="arch-layer-name">ADWIN Monitor</div><div class="arch-layer-items">Input distribution check<br>Alert if drift > threshold</div></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-layer layer-color-2"><div class="arch-layer-title">Scaler</div><div class="arch-layer-name">StandardScaler</div><div class="arch-layer-items">Loaded from<br>cluster_scaler.pkl</div></div>
+    </div>
+
+    <div class="arch-section-label" style="margin-top:16px">LAYER 3 — ML INFERENCE CORE (your model brain)</div>
+    <div class="arch-row">
+      <div class="arch-layer layer-color-3"><div class="arch-layer-title">Primary Model</div><div class="arch-layer-name">LightGBM + XGBoost</div><div class="arch-layer-items">best_lgbm_model.pkl<br>Monotone constraints</div></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-layer layer-color-3"><div class="arch-layer-title">Uncertainty</div><div class="arch-layer-name">MAPIE Conformal</div><div class="arch-layer-items">conformal_mapie.pkl<br>90% coverage interval</div></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-layer layer-color-3"><div class="arch-layer-title">XAI Engine</div><div class="arch-layer-name">SHAP + LIME</div><div class="arch-layer-items">Per-prediction<br>explanations (async)</div></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-layer layer-color-3"><div class="arch-layer-title">Prescriber</div><div class="arch-layer-name">DiCE Counterfactuals</div><div class="arch-layer-items">What changes reduce<br>emissions by X%?</div></div>
+    </div>
+
+    <div class="arch-section-label" style="margin-top:16px">LAYER 4 — INTELLIGENCE SERVICES</div>
+    <div class="arch-row">
+      <div class="arch-layer layer-color-4"><div class="arch-layer-title">Risk Engine</div><div class="arch-layer-name">Anomaly Detector</div><div class="arch-layer-items">IQR + cluster deviation<br>Alert system</div></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-layer layer-color-4"><div class="arch-layer-title">Policy Sim</div><div class="arch-layer-name">Scenario Engine</div><div class="arch-layer-items">What if regulation<br>sets limit X?</div></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-layer layer-color-4"><div class="arch-layer-title">Green Tracker</div><div class="arch-layer-name">CodeCarbon API</div><div class="arch-layer-items">Model CO₂ cost<br>per inference batch</div></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-layer layer-color-4"><div class="arch-layer-title">Feedback Loop</div><div class="arch-layer-name">Active Learning</div><div class="arch-layer-items">Flag uncertain preds<br>Queue for labelling</div></div>
+    </div>
+
+    <div class="arch-section-label" style="margin-top:16px">LAYER 5–8 — API · CACHE · DB · FRONTEND</div>
+    <div class="arch-row">
+      <div class="arch-layer layer-color-5"><div class="arch-layer-title">API Gateway</div><div class="arch-layer-name">FastAPI</div><div class="arch-layer-items">6 REST endpoints<br>WebSocket stream</div></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-layer layer-color-5"><div class="arch-layer-title">Cache</div><div class="arch-layer-name">Redis</div><div class="arch-layer-items">SHAP cache 5min TTL<br>Rate limiting</div></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-layer layer-color-5"><div class="arch-layer-title">Database</div><div class="arch-layer-name">PostgreSQL + TimescaleDB</div><div class="arch-layer-items">Predictions · Drift logs<br>Feedback labels</div></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-layer layer-color-1"><div class="arch-layer-title">Frontend</div><div class="arch-layer-name">React / Next.js</div><div class="arch-layer-items">4 intelligent screens<br>WebSocket live feed</div></div>
+    </div>
+  </div>
+
+  <!-- API Endpoints -->
+  <div class="full-card">
+    <div class="label">FastAPI Endpoint Design</div>
+    <div class="code-block mt8">
+<span class="c-cm"># POST /predict — core prediction + conformal interval</span>
+<span class="c-cm"># Returns: { co2_kg, lower_bound, upper_bound, cluster_id, risk_level }</span>
+
+<span class="c-cm"># POST /explain — async SHAP + LIME for one prediction</span>
+<span class="c-cm"># Returns: { shap_values[], lime_weights[], top_feature, direction }</span>
+
+<span class="c-cm"># POST /prescribe — DiCE counterfactuals (what must change?)</span>
+<span class="c-cm"># Returns: { scenarios[{changes, predicted_reduction, feasibility}] }</span>
+
+<span class="c-cm"># GET  /drift/status — ADWIN detector health</span>
+<span class="c-cm"># Returns: { drift_detected, last_alarm_at, severity, recommendation }</span>
+
+<span class="c-cm"># POST /simulate/policy — regulation scenario engine</span>
+<span class="c-cm"># Input: { emission_limit_kg, time_horizon_hours }</span>
+<span class="c-cm"># Returns: { compliance_rate, required_at_reduction, cost_impact }</span>
+
+<span class="c-cm"># POST /feedback — operator labels a prediction (active learning)</span>
+<span class="c-cm"># Input: { prediction_id, actual_co2_kg, operator_notes }</span>
+<span class="c-cm"># Queues record for next retraining cycle</span>
+
+<span class="c-cm"># WS  /stream — real-time prediction feed via WebSocket</span></div>
+  </div>
+
+  <!-- DB Design -->
+  <div class="full-card mt16">
+    <div class="label">Database Schema (TimescaleDB — time-series optimized)</div>
+    <div class="code-block mt8">
+<span class="c-cm">-- Predictions table (hypertable, partitioned by time)</span>
+<span class="c-kw">CREATE TABLE</span> predictions (
+  id          UUID <span class="c-kw">PRIMARY KEY</span>,
+  ts          TIMESTAMPTZ <span class="c-kw">NOT NULL</span>,   <span class="c-cm">-- indexed automatically</span>
+  at_val      FLOAT, v_val FLOAT, ap_val FLOAT, rh_val FLOAT,
+  co2_pred    FLOAT,
+  co2_lower   FLOAT, co2_upper FLOAT,   <span class="c-cm">-- conformal interval</span>
+  cluster_id  INT,   risk_level TEXT,
+  shap_top_feature TEXT, shap_direction TEXT
+);
+
+<span class="c-cm">-- Drift events log</span>
+<span class="c-kw">CREATE TABLE</span> drift_events (
+  id         UUID, ts TIMESTAMPTZ,
+  feature    TEXT, drift_score FLOAT, severity TEXT,
+  auto_retrain_triggered BOOLEAN
+);
+
+<span class="c-cm">-- Feedback queue (active learning)</span>
+<span class="c-kw">CREATE TABLE</span> feedback_labels (
+  prediction_id UUID, actual_co2 FLOAT,
+  operator_note TEXT, label_quality FLOAT,
+  used_in_retrain BOOLEAN <span class="c-kw">DEFAULT</span> false
+);</div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════ SECTION 3: FEATURES ═══════════ -->
+<section class="section" id="features">
+  <div class="section-tag">03 · Advanced Features</div>
+  <h2>14 Features That Stand Out</h2>
+  <p class="section-desc">Every single feature maps directly to code already in your notebook. This is integration, not invention.</p>
+
+  <div class="feature-grid">
+
+    <div class="feat-card wow">
+      <div class="feat-icon">🔮</div>
+      <div class="feat-title">Counterfactual Prescription Engine</div>
+      <div class="feat-desc">Operator inputs current readings. System runs DiCE to generate 3 ranked scenarios: "Reduce AT by 4°C → saves 18% CO₂. Increase V by 8 cmHg → saves 12%." Each scenario shows operational feasibility score.</div>
+      <div class="feat-tech">dice-ml → /prescribe endpoint</div>
+    </div>
+
+    <div class="feat-card wow">
+      <div class="feat-icon">⚠️</div>
+      <div class="feat-title">Real-Time Emission Risk Scorer</div>
+      <div class="feat-desc">Every prediction is tagged LOW / MODERATE / HIGH / CRITICAL based on (a) predicted value vs regulatory limit, (b) conformal interval width (model uncertainty), and (c) distance from the nearest high-emission cluster centroid.</div>
+      <div class="feat-tech">MAPIE + KMeans → risk_level field</div>
+    </div>
+
+    <div class="feat-card wow">
+      <div class="feat-icon">🏛️</div>
+      <div class="feat-title">Policy Simulation Engine</div>
+      <div class="feat-desc">Regulator sets a new CO₂ limit. System simulates: "At this limit, X% of your historical readings would violate. Required AT reduction: 6.2°C. Estimated compliance cost: calculated from operational changes." No other student project has this.</div>
+      <div class="feat-tech">Your XGB model → scenario sweeps</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">🧠</div>
+      <div class="feat-title">Interactive SHAP Explorer</div>
+      <div class="feat-desc">Every prediction renders an interactive SHAP waterfall chart. User can hover over each feature bar to see: "AT contributed +142 kg/h because it was 31°C, 3.2σ above average." Served via async endpoint, cached in Redis.</div>
+      <div class="feat-tech">shap.TreeExplainer → Redis cache</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">📡</div>
+      <div class="feat-title">ADWIN Concept Drift Monitor</div>
+      <div class="feat-desc">Background worker streams prediction residuals through your ADWIN detector. When drift detected: (1) dashboard alert fires, (2) drift event logged to DB, (3) if severity HIGH, auto-queues retraining job. Includes seasonal drift calendar.</div>
+      <div class="feat-tech">river.drift.ADWIN → background worker</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">🌿</div>
+      <div class="feat-title">Model Carbon Ledger</div>
+      <div class="feat-desc">CodeCarbon wraps every inference batch. The UI shows a live "Model Carbon Account": total CO₂ emitted by the AI system itself, per-day trend, and a comparison: "This week your model emitted 0.003g — equivalent to charging a phone 0.01%." Honest sustainability.</div>
+      <div class="feat-tech">CodeCarbon → /metrics endpoint</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">🔁</div>
+      <div class="feat-title">Operator Feedback Loop</div>
+      <div class="feat-desc">After each prediction, operator can enter the actual CO₂ reading. The system computes label quality score (how wrong was the model), stores it in feedback_labels table, and when 200+ high-quality labels accumulate, auto-triggers retraining pipeline.</div>
+      <div class="feat-tech">PostgreSQL → active learning queue</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">🎯</div>
+      <div class="feat-title">Cluster Operational Mode Detector</div>
+      <div class="feat-desc">Every input is classified into one of your 4 operational clusters (Cold/Mild/Warm/Hot mode) via the saved KMeans model. The prediction screen shows: "You are in Hot/Peak mode — expect +18% higher CO₂ than baseline. Top driver: AT."</div>
+      <div class="feat-tech">kmeans_k4.pkl → cluster context</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">📊</div>
+      <div class="feat-title">Pareto Trade-off Advisor</div>
+      <div class="feat-desc">Business dashboard shows the Pareto frontier from your multi-objective Optuna run: "Current model accuracy costs 0.004g CO₂/inference. You can reduce to 0.001g with only 2% RMSE loss — recommend switching to the green model." Automated decision support.</div>
+      <div class="feat-tech">Optuna Pareto → decision API</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">⏱️</div>
+      <div class="feat-title">Time-Series Forecast Mode</div>
+      <div class="feat-desc">Batch mode accepts 24 future hours of AT/V/AP/RH forecasts (from weather API), runs predictions for all, and returns: hourly CO₂ forecast, peak emission window, recommended operational schedule to stay under limit.</div>
+      <div class="feat-tech">LightGBM batch → schedule optimizer</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">📋</div>
+      <div class="feat-title">ESG Auto-Report Generator</div>
+      <div class="feat-desc">Monthly PDF report auto-generated: total CO₂, worst day, best day, compliance rate, model accuracy, drift events, counterfactual savings achieved. Ready to submit to ESG compliance officers or carbon auditors. No manual work.</div>
+      <div class="feat-tech">ReportLab/WeasyPrint → PDF API</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">🔍</div>
+      <div class="feat-title">LIME vs SHAP Agreement Score</div>
+      <div class="feat-desc">For each prediction, the system computes how much LIME and SHAP agree on the top features. High disagreement = "This prediction has uncertain explanation — treat with caution." A meta-XAI validation layer no other portfolio has.</div>
+      <div class="feat-tech">SHAP + LIME cosine similarity score</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">🌡️</div>
+      <div class="feat-title">Weather API Auto-Fill</div>
+      <div class="feat-desc">User enters their plant location. System calls OpenWeatherMap, auto-populates AT, RH, AP from live weather data. User only needs to enter V (vacuum — plant-specific). Reduces input friction to one field. Feels like a real product.</div>
+      <div class="feat-tech">OpenWeatherMap API → auto-feature fill</div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-icon">📈</div>
+      <div class="feat-title">Evidently Data Quality Gate</div>
+      <div class="feat-desc">Before any batch job runs, Evidently compares the incoming data distribution against your training distribution. If >20% feature drift detected, batch is blocked with report: "Input data drifted significantly — predictions may be unreliable."</div>
+      <div class="feat-tech">evidently → pre-batch quality gate</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════ SECTION 4: MULTI-DOMAIN ═══════════ -->
+<section class="section" id="multi">
+  <div class="section-tag">04 · Multi-Domain Integration</div>
+  <h2>Beyond Machine Learning</h2>
+  <p class="section-desc">Four real-world domains powered by your single model — each a separate story you can tell in interviews.</p>
+
+  <div class="domain-grid">
+    <div class="domain-card">
+      <div class="domain-icon-row">
+        <div class="domain-emoji">⚙️</div>
+        <div><div class="domain-title">Industrial Operations</div><div class="domain-subtitle">Plant managers and shift supervisors</div></div>
+      </div>
+      <ul class="domain-list">
+        <li>Real-time emission prediction per operational shift</li>
+        <li>Counterfactual prescriptions: which dial to turn and by how much</li>
+        <li>Cluster mode detection: "You are in Peak Load mode"</li>
+        <li>24-hour schedule optimizer: minimize emissions while meeting output targets</li>
+        <li>Anomaly alerts: "Emission spike detected — likely equipment issue"</li>
+      </ul>
+    </div>
+    <div class="domain-card">
+      <div class="domain-icon-row">
+        <div class="domain-emoji">🌍</div>
+        <div><div class="domain-title">Environmental Compliance</div><div class="domain-subtitle">Sustainability officers and regulators</div></div>
+      </div>
+      <ul class="domain-list">
+        <li>Policy simulation: test any emission limit before it's enforced</li>
+        <li>Compliance rate history: % of readings below regulation threshold</li>
+        <li>Evidently drift reports: input data health for auditors</li>
+        <li>Auto-generated ESG PDF reports for monthly submission</li>
+        <li>Carbon credit estimation: predicted surplus or deficit per quarter</li>
+      </ul>
+    </div>
+    <div class="domain-card">
+      <div class="domain-icon-row">
+        <div class="domain-emoji">💰</div>
+        <div><div class="domain-title">Business Decision Science</div><div class="domain-subtitle">CFOs and operations directors</div></div>
+      </div>
+      <ul class="domain-list">
+        <li>Pareto advisor: accuracy vs model carbon cost trade-off dashboard</li>
+        <li>Cost-emission frontier: what does 10% emission cut cost operationally?</li>
+        <li>ROI calculator for each counterfactual scenario</li>
+        <li>Model carbon ledger: AI system's own environmental cost tracked</li>
+        <li>Break-even analysis: when does greener model justify accuracy drop?</li>
+      </ul>
+    </div>
+    <div class="domain-card">
+      <div class="domain-icon-row">
+        <div class="domain-emoji">🔬</div>
+        <div><div class="domain-title">AI Research & Transparency</div><div class="domain-subtitle">Data scientists and ML auditors</div></div>
+      </div>
+      <ul class="domain-list">
+        <li>SHAP vs LIME agreement score per prediction — meta-XAI layer</li>
+        <li>Conformal interval width trend: model uncertainty over time</li>
+        <li>Drift detection timeline with alarm annotations</li>
+        <li>Active learning queue: which predictions are most uncertain?</li>
+        <li>Retraining audit log: when, why, and what changed</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════ SECTION 5: UI SCREENS ═══════════ -->
+<section class="section" id="screens">
+  <div class="section-tag">05 · UI/UX Design</div>
+  <h2>4 Intelligent Screens</h2>
+  <p class="section-desc">Not charts on a page. Each screen is an intelligence interface designed for a specific decision-maker.</p>
+
+  <div class="screens-grid">
+    <!-- Screen 1 -->
+    <div class="screen-card">
+      <div class="screen-header">
+        <div class="screen-dot" style="background:var(--teal)"></div>
+        <div class="screen-dot" style="background:var(--border2)"></div>
+        <div class="screen-dot" style="background:var(--border2)"></div>
+        <div class="screen-title">Screen 1 — Live Command Center</div>
+        <span class="tag-inline">Operator</span>
+      </div>
+      <div class="screen-body">
+        <p class="screen-desc">Real-time single-reading prediction with full context. Weather auto-fill + one manual input (V). Instant result with risk badge, conformal interval, and cluster mode.</p>
+        <div class="screen-feature"><div class="screen-feature-dot" style="background:var(--teal)"></div>Weather API auto-fills AT, RH, AP from plant location</div>
+        <div class="screen-feature"><div class="screen-feature-dot" style="background:var(--blue)"></div>Prediction card: "348 kg/h ± 42 (90% confident)" with risk badge</div>
+        <div class="screen-feature"><div class="screen-feature-dot" style="background:var(--violet)"></div>Cluster mode chip: "⚡ Hot/Peak Mode — elevated CO₂ expected"</div>
+        <div class="screen-feature"><div class="screen-feature-dot" style="background:var(--amber)"></div>SHAP waterfall auto-renders beneath — top 5 driving features</div>
+        <div class="screen-feature"><div class="screen-feature-dot" style="background:var(--teal)"></div>Operator feedback input: "Enter actual reading after shift"</div>
+        <div class="screen-feature"><div class="screen-feature-dot" style="background:var(--red)"></div>Live ADWIN alert banner if drift is currently active</div>
+      </div>
+    </div>
+
+    <!-- Screen 2 -->
+    <div class="screen-card">
+      <div class="screen-header">
+        <div class="screen-dot" style="background:var(--violet)"></div>
+        <div class="screen-dot" style="background:var(--border2)"></div>
+        <div class="screen-dot" style="background:var(--border2)"></div>
+        <div class="screen-title">Screen 2 — Prescription Studio</div>
+        <span class="tag-inline">Engineer</span>
+      </div>
+      <div class="screen-body">
+        <p class="screen-desc">The "What-If" sandbox. Engineer picks a high-emission prediction and asks the system: "What is the minimum change to get below 300 kg/h?" DiCE returns 3 ranked scenarios with feasibility scores.</p>
+        <div class="screen-feature"><div class="screen-feature-dot" style="background:var(--violet)"></div>Target slider: drag to set desired max CO₂ level</div>
+        <div class="screen-feature"><div class="screen-feature-dot" style="background:var(--teal)"></div>3 scenario cards with feature deltas and predicted outcome</div>
+        <div class="screen-feature"><div class="screen-feature-dot" style="background:var(--blue)"></div>Feasibility score: "Operationally achievable? High / Medium / Low"</div>
+        <div class="screen-feature"><div class="screen-feature-dot" style="background:var(--amber)"></div>Manual what-if sliders: drag AT, V, AP, RH and see live prediction update</div>
+        <div class="screen-feature"><div class="screen-feature-dot" style="background:var(--violet)"></div>ALE plot for selected feature — shows effect across full range</div>
+        <div class="screen-feature"><div class="screen-feature-dot" style="background:var(--green)"></div>Export prescription as PDF for supervisor approval workflow</div>
+      </div>
+    </div>
+
+    <!-- Screen 3 -->
+    <div class="screen-card">
+      <div class="screen-header">
+        <div class="screen-dot" style="background:var(--amber)"></div>
+        <div class="screen-dot" style="background:var(--border2)"></div>
+        <div class="screen-dot" style="background:var(--border2)"></div>
+        <div class="screen-title">Screen 3 — Policy Simulator</div>
+        <span class="tag-inline">Compliance</span>
+      </div>
+      <div class="screen-body">
+        <p class="screen-desc">Regulation simulator for sustainability officers. Set any emission limit, any time horizon. System sweeps your entire historical dataset and returns a compliance impact analysis.</p>
+        <div class="screen-feature"><div class="screen-feature-dot" style="background:var(--amber)"></div>Emission limit input + time horizon selector</div>
+        <div class="screen-feature"><div class="screen-feature-dot" style="background:var(--red)"></div>Compliance rate gauge: "78.3% of readings would comply"</div>
+        <div class="screen-feature"><div class="screen-feature-dot" style="background:var(--teal)"></div>Required operational change: "Mean AT must drop 4.1°C"</div>
+        <div class="screen-feature"><div class="screen-feature-dot" style="background:var(--violet)"></div>Distribution chart: current vs limit, overlap zone highlighted</div>
+        <div class="screen-feature"><div class="screen-feature-dot" style="background:var(--blue)"></div>Carbon credit estimation: surplus or deficit at this limit</div>
+        <div class="screen-feature"><div class="screen-feature-dot" style="background:var(--amber)"></div>Export: full Evidently HTML drift report + ESG PDF</div>
+      </div>
+    </div>
+
+    <!-- Screen 4 -->
+    <div class="screen-card">
+      <div class="screen-header">
+        <div class="screen-dot" style="background:var(--green)"></div>
+        <div class="screen-dot" style="background:var(--border2)"></div>
+        <div class="screen-dot" style="background:var(--border2)"></div>
+        <div class="screen-title">Screen 4 — Model Intelligence Hub</div>
+        <span class="tag-inline">Data Scientist</span>
+      </div>
+      <div class="screen-body">
+        <p class="screen-desc">The brain's health monitor. Drift timeline, model carbon ledger, SHAP/LIME agreement scores, active learning queue, and retraining audit log. This is what an MLOps engineer checks every morning.</p>
+        <div class="screen-feature"><div class="screen-feature-dot" style="background:var(--teal)"></div>ADWIN drift timeline: alarm points annotated on residual chart</div>
+        <div class="screen-feature"><div class="screen-feature-dot" style="background:var(--green)"></div>Model Carbon Ledger: cumulative CO₂ of all inferences this month</div>
+        <div class="screen-feature"><div class="screen-feature-dot" style="background:var(--blue)"></div>SHAP vs LIME agreement heatmap: per-feature trust score</div>
+        <div class="screen-feature"><div class="screen-feature-dot" style="background:var(--violet)"></div>Active learning queue: N labels collected, X needed for retrain</div>
+        <div class="screen-feature"><div class="screen-feature-dot" style="background:var(--amber)"></div>Pareto frontier: current model's position on accuracy-vs-carbon plot</div>
+        <div class="screen-feature"><div class="screen-feature-dot" style="background:var(--red)"></div>One-click retrain trigger with drift justification log</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════ SECTION 6: PIPELINE ═══════════ -->
+<section class="section" id="pipeline">
+  <div class="section-tag">06 · ML Inference Pipeline</div>
+  <h2>Real-Time vs Batch Flow</h2>
+  <p class="section-desc">Two paths through the system. Real-time for live monitoring. Batch for daily ESG reports and retraining.</p>
+
+  <div class="label" style="margin-bottom:12px">REAL-TIME PATH (per request, &lt;200ms)</div>
+  <div class="pipeline-wrap">
+    <div class="pipeline-flow">
+      <div class="pipe-step">
+        <div class="pipe-icon">📡</div>
+        <div class="pipe-name">Sensor Input</div>
+        <div class="pipe-detail">AT, V, AP, RH<br>+ weather API fill</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">
+        <div class="pipe-icon">✅</div>
+        <div class="pipe-name">Pydantic Validate</div>
+        <div class="pipe-detail">Range check<br>Type enforce</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step active-step">
+        <div class="pipe-icon">⚙️</div>
+        <div class="pipe-name">Feature Engine</div>
+        <div class="pipe-detail">heat_index, AT²<br>AT_V_ratio etc</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step active-step">
+        <div class="pipe-icon">🧠</div>
+        <div class="pipe-name">LightGBM</div>
+        <div class="pipe-detail">co2_kg pred<br>+ MAPIE interval</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">
+        <div class="pipe-icon">🎯</div>
+        <div class="pipe-name">Cluster Tag</div>
+        <div class="pipe-detail">KMeans mode<br>risk_level score</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">
+        <div class="pipe-icon">💾</div>
+        <div class="pipe-name">DB Write</div>
+        <div class="pipe-detail">predictions table<br>TimescaleDB</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">
+        <div class="pipe-icon">📤</div>
+        <div class="pipe-name">API Response</div>
+        <div class="pipe-detail">JSON + SHAP<br>async queued</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="label" style="margin-top:28px;margin-bottom:12px">BATCH PATH (nightly cron, background worker)</div>
+  <div class="pipeline-wrap">
+    <div class="pipeline-flow">
+      <div class="pipe-step">
+        <div class="pipe-icon">📂</div>
+        <div class="pipe-name">CSV Upload</div>
+        <div class="pipe-detail">Day's sensor log<br>S3 trigger</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step active-step">
+        <div class="pipe-icon">🔍</div>
+        <div class="pipe-name">Evidently Gate</div>
+        <div class="pipe-detail">Distribution check<br>vs training ref</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step active-step">
+        <div class="pipe-icon">🔁</div>
+        <div class="pipe-name">Bulk Predict</div>
+        <div class="pipe-detail">All rows<br>CodeCarbon on</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">
+        <div class="pipe-icon">📊</div>
+        <div class="pipe-name">ADWIN Scan</div>
+        <div class="pipe-detail">Residual stream<br>drift detection</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step">
+        <div class="pipe-icon">📋</div>
+        <div class="pipe-name">ESG Report</div>
+        <div class="pipe-detail">Auto PDF<br>compliance rate</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step active-step">
+        <div class="pipe-icon">🔁</div>
+        <div class="pipe-name">Retrain Check</div>
+        <div class="pipe-detail">Labels ≥ 200?<br>Trigger if yes</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════ SECTION 7: DEPLOYMENT ═══════════ -->
+<section class="section" id="deploy">
+  <div class="section-tag">07 · Deployment Plan</div>
+  <h2>Full Production Stack</h2>
+  <p class="section-desc">Free-tier deployable. Every tool has a free plan that handles portfolio-scale traffic.</p>
+
+  <div class="deploy-grid">
+    <div class="deploy-card">
+      <div class="deploy-layer">Backend</div>
+      <div class="deploy-title">FastAPI + Uvicorn</div>
+      <div class="deploy-item">FastAPI <span class="deploy-badge db-green">Core API</span></div>
+      <div class="deploy-item">Uvicorn <span class="deploy-badge db-blue">ASGI server</span></div>
+      <div class="deploy-item">Pydantic v2 <span class="deploy-badge db-blue">Validation</span></div>
+      <div class="deploy-item">APScheduler <span class="deploy-badge db-amber">Cron jobs</span></div>
+      <div class="deploy-item">WebSockets <span class="deploy-badge db-green">Live feed</span></div>
+    </div>
+    <div class="deploy-card">
+      <div class="deploy-layer">ML Serving</div>
+      <div class="deploy-title">Model Layer</div>
+      <div class="deploy-item">joblib.load at startup <span class="deploy-badge db-green">Fast</span></div>
+      <div class="deploy-item">Redis SHAP cache <span class="deploy-badge db-blue">5min TTL</span></div>
+      <div class="deploy-item">Background workers <span class="deploy-badge db-amber">asyncio</span></div>
+      <div class="deploy-item">Model versioning <span class="deploy-badge db-green">MLflow</span></div>
+    </div>
+    <div class="deploy-card">
+      <div class="deploy-layer">Database</div>
+      <div class="deploy-title">Data Layer</div>
+      <div class="deploy-item">PostgreSQL <span class="deploy-badge db-green">Supabase free</span></div>
+      <div class="deploy-item">TimescaleDB ext <span class="deploy-badge db-blue">Time-series</span></div>
+      <div class="deploy-item">Redis <span class="deploy-badge db-amber">Upstash free</span></div>
+      <div class="deploy-item">SQLAlchemy ORM <span class="deploy-badge db-green">Migrations</span></div>
+    </div>
+    <div class="deploy-card">
+      <div class="deploy-layer">Frontend</div>
+      <div class="deploy-title">React + Next.js</div>
+      <div class="deploy-item">Next.js 14 App Router <span class="deploy-badge db-green">Vercel free</span></div>
+      <div class="deploy-item">Recharts / Plotly <span class="deploy-badge db-blue">Charts</span></div>
+      <div class="deploy-item">TailwindCSS <span class="deploy-badge db-blue">Styling</span></div>
+      <div class="deploy-item">ShadcnUI <span class="deploy-badge db-green">Components</span></div>
+    </div>
+    <div class="deploy-card">
+      <div class="deploy-layer">Infrastructure</div>
+      <div class="deploy-title">DevOps</div>
+      <div class="deploy-item">Docker + Compose <span class="deploy-badge db-green">Local dev</span></div>
+      <div class="deploy-item">Render.com <span class="deploy-badge db-blue">Backend free</span></div>
+      <div class="deploy-item">GitHub Actions <span class="deploy-badge db-green">CI/CD</span></div>
+      <div class="deploy-item">Vercel <span class="deploy-badge db-blue">Frontend free</span></div>
+    </div>
+    <div class="deploy-card">
+      <div class="deploy-layer">Monitoring</div>
+      <div class="deploy-title">Observability</div>
+      <div class="deploy-item">Sentry.io <span class="deploy-badge db-green">Error tracking</span></div>
+      <div class="deploy-item">Loguru <span class="deploy-badge db-blue">Structured logs</span></div>
+      <div class="deploy-item">Prometheus metrics <span class="deploy-badge db-amber">Optional</span></div>
+      <div class="deploy-item">Healthcheck endpoint <span class="deploy-badge db-green">/health</span></div>
+    </div>
+  </div>
+
+  <div class="full-card mt16">
+    <div class="label">Docker Compose — Full Stack in One Command</div>
+    <div class="code-block mt8">
+<span class="c-cm"># docker-compose.yml</span>
+services:
+  backend:
+    build: ./backend
+    ports: [<span class="c-st">"8000:8000"</span>]
+    environment:
+      - DATABASE_URL=postgresql://...
+      - REDIS_URL=redis://redis:6379
+    volumes: [<span class="c-st">"./models:/app/models"</span>]   <span class="c-cm"># mount your .pkl files</span>
+    depends_on: [db, redis]
+
+  frontend:
+    build: ./frontend
+    ports: [<span class="c-st">"3000:3000"</span>]
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:8000
+
+  db:
+    image: timescale/timescaledb:latest-pg15
+    volumes: [<span class="c-st">"pgdata:/var/lib/postgresql/data"</span>]
+
+  redis:
+    image: redis:7-alpine
+
+  drift_worker:                                <span class="c-cm"># background ADWIN process</span>
+    build: ./backend
+    command: python workers/drift_monitor.py</div>
+  </div>
+
+  <div class="full-card mt16">
+    <div class="label">CI/CD Pipeline — GitHub Actions</div>
+    <div class="code-block mt8">
+<span class="c-cm"># .github/workflows/deploy.yml</span>
+<span class="c-kw">on</span>: push to main
+
+jobs:
+  test:
+    - pytest backend/tests/          <span class="c-cm"># unit tests for each endpoint</span>
+    - pytest tests/test_model.py     <span class="c-cm"># model prediction sanity checks</span>
+
+  build:
+    - docker build + push to GHCR
+
+  deploy:
+    - render deploy --service-id $RENDER_ID   <span class="c-cm"># auto-deploy backend</span>
+    - vercel deploy --prod                     <span class="c-cm"># auto-deploy frontend</span>
+
+  model_validation:
+    - python scripts/validate_model.py        <span class="c-cm"># RMSE regression test</span>
+    <span class="c-cm"># Fails CI if new model RMSE > old model RMSE + 5%</span></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════ SECTION 8: WOW FACTOR ═══════════ -->
+<section class="section" id="wow">
+  <div class="section-tag">08 · Wow Factor</div>
+  <h2>3 Features That Make Interviewers Stop</h2>
+  <p class="section-desc">These are the features where the interviewer puts down their pen and says "wait, can you explain that again?"</p>
+
+  <div class="wow-grid">
+    <div class="wow-card wow-card-1">
+      <div class="wow-number">01</div>
+      <div class="wow-label" style="color:var(--teal)">🔮 The Prescriber</div>
+      <div class="wow-title">Autonomous Counterfactual Prescription</div>
+      <p class="wow-desc">When a prediction comes back HIGH risk, the system automatically asks DiCE: "Generate 3 operationally feasible scenarios to reduce this below the limit." These are ranked by feasibility score and presented as an <strong style="color:var(--t1)">actionable decision card</strong> — not a chart, not a number, but a recommendation you can hand to a plant manager.<br><br>
+      The key insight: every other XAI project explains <em>why</em> the model predicted X. Yours also explains <em>what to do about it</em>. That's the difference between explainability and intelligence.</p>
+      <div class="wow-impact wi-teal">Interviewer line: "So your model doesn't just predict — it prescribes?"</div>
+    </div>
+
+    <div class="wow-card wow-card-2">
+      <div class="wow-number">02</div>
+      <div class="wow-label" style="color:var(--blue)">🧾 The Carbon Ledger</div>
+      <div class="wow-title">AI That Audits Its Own Environmental Cost</div>
+      <p class="wow-desc">CodeCarbon wraps every inference batch. The system maintains a running <strong style="color:var(--t1)">"Model Carbon Account"</strong>: total CO₂ emitted by the AI system itself (not the power plant — the model), per-day trend, and a sustainability rating of the model vs alternatives from the Pareto run.<br><br>
+      This creates a recursive argument: a system that predicts CO₂ and also measures its own CO₂. The system can say: "This week your plant emitted 12,400 kg of CO₂. To predict that, I emitted 0.0003g." That kind of self-aware sustainability narrative is entirely unique in any ML portfolio.</p>
+      <div class="wow-impact wi-blue">Interviewer line: "The model tracks its own carbon footprint?"</div>
+    </div>
+
+    <div class="wow-card wow-card-3">
+      <div class="wow-number">03</div>
+      <div class="wow-label" style="color:var(--violet)">🏛️ The Policy Engine</div>
+      <div class="wow-title">Regulatory Compliance Simulator</div>
+      <p class="wow-desc">A compliance officer types: <em>"What if the EU Carbon Border Adjustment Mechanism sets a 300 kg/h limit next year?"</em> Your system sweeps your historical data, returns: <strong style="color:var(--t1)">"72% compliance rate. Gap of 84 kg/h on average in peak summer. Required AT reduction: 5.8°C. Estimated carbon credit deficit: 2,400 units."</strong><br><br>
+      This is policy simulation — a feature that governments and consultancies build with teams of analysts. You built it with your regression model and a parameter sweep. That reframing — from ML model to policy tool — is what makes an interviewer see a product, not a project.</p>
+      <div class="wow-impact wi-violet">Interviewer line: "This is basically what McKinsey charges for."</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════ SECTION 9: TECH TABLE ═══════════ -->
+<section class="section" id="tech">
+  <div class="section-tag">09 · Technology Map</div>
+  <h2>Full Stack at a Glance</h2>
+  <div class="full-card">
+    <table class="tech-table">
+      <thead><tr><th>Component</th><th>Technology</th><th>Purpose</th><th>Maps To Your Notebook</th></tr></thead>
+      <tbody>
+        <tr><td>ML Models</td><td>LightGBM · XGBoost (monotone)</td><td>Core CO₂ prediction</td><td>Week 3 — best_lgbm_model.pkl</td></tr>
+        <tr><td>Uncertainty</td><td>MAPIE (jackknife+)</td><td>Conformal intervals</td><td>Week 5 — conformal_mapie.pkl</td></tr>
+        <tr><td>Global XAI</td><td>SHAP TreeExplainer</td><td>Feature importance</td><td>Week 4 — shap_values</td></tr>
+        <tr><td>Local XAI</td><td>LIME tabular</td><td>Per-prediction explanation</td><td>Week 4 — lime_explainer</td></tr>
+        <tr><td>Counterfactuals</td><td>DiCE-ML</td><td>Prescription engine</td><td>Week 5 — dice_exp</td></tr>
+        <tr><td>Clustering</td><td>KMeans k=4 · GMM</td><td>Operational mode tagging</td><td>Week 7 — kmeans_k4.pkl</td></tr>
+        <tr><td>Drift Detection</td><td>River ADWIN</td><td>Concept drift alerts</td><td>Week 7 — detector</td></tr>
+        <tr><td>Data Quality</td><td>Evidently AI</td><td>Pre-batch distribution gate</td><td>Week 7 — drift_report</td></tr>
+        <tr><td>Green ML</td><td>CodeCarbon</td><td>Inference carbon ledger</td><td>Week 6 — emissions_results</td></tr>
+        <tr><td>Tuning</td><td>Optuna multi-objective</td><td>Pareto accuracy vs CO₂</td><td>Week 6 — moo_study</td></tr>
+        <tr><td>API</td><td>FastAPI + Pydantic v2</td><td>6 endpoints + WebSocket</td><td>New layer</td></tr>
+        <tr><td>Cache</td><td>Redis (Upstash)</td><td>SHAP results, rate limit</td><td>New layer</td></tr>
+        <tr><td>Database</td><td>PostgreSQL + TimescaleDB</td><td>Prediction + drift logs</td><td>New layer</td></tr>
+        <tr><td>Frontend</td><td>Next.js 14 + TailwindCSS</td><td>4 intelligent screens</td><td>New layer</td></tr>
+        <tr><td>Deploy Backend</td><td>Docker + Render.com</td><td>Free-tier hosting</td><td>New layer</td></tr>
+        <tr><td>Deploy Frontend</td><td>Vercel</td><td>Free-tier CDN hosting</td><td>New layer</td></tr>
+        <tr><td>CI/CD</td><td>GitHub Actions</td><td>Auto deploy + model tests</td><td>New layer</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════ SECTION 10: RESUME ═══════════ -->
+<section class="section" id="resume">
+  <div class="section-tag">10 · Resume &amp; Interview</div>
+  <h2>How to Present This</h2>
+  <p class="section-desc">The system is built. Now you need to tell the story correctly — one sentence at a time.</p>
+
+  <div class="resume-grid">
+    <div class="resume-card">
+      <div class="resume-title">Resume Bullet Points</div>
+      <div class="resume-bullet"><div class="rb-dot"></div>Built NeuralCarbon, a production-grade autonomous carbon intelligence platform — FastAPI backend, React frontend, PostgreSQL/TimescaleDB, Redis caching, Dockerized and deployed to Render + Vercel</div>
+      <div class="resume-bullet"><div class="rb-dot"></div>Designed a DiCE counterfactual prescription engine that generates ranked operational recommendations to reduce CO₂ by target percentages, with feasibility scoring</div>
+      <div class="resume-bullet"><div class="rb-dot"></div>Implemented MAPIE conformal prediction intervals (90% statistical coverage guarantee) and ADWIN concept drift detection with automated retraining triggers</div>
+      <div class="resume-bullet"><div class="rb-dot"></div>Built a multi-objective Optuna (RMSE vs training CO₂) Pareto optimizer and CodeCarbon inference ledger — model audits its own environmental cost per batch</div>
+      <div class="resume-bullet"><div class="rb-dot"></div>Designed a regulatory policy simulation engine: sweep any emission limit across historical data to return compliance rate, operational gap, and carbon credit impact</div>
+      <div class="resume-bullet"><div class="rb-dot"></div>Built active learning feedback loop: operator labels queued to PostgreSQL, triggers automated retraining pipeline via GitHub Actions CI/CD when label count threshold reached</div>
+    </div>
+
+    <div class="resume-card">
+      <div class="resume-title">Skills to List on Resume</div>
+      <div class="resume-bullet"><div class="rb-dot"></div><strong style="color:var(--t1)">ML:</strong> XGBoost, LightGBM, RandomForest, ElasticNet, scikit-learn, Optuna, monotone constraints</div>
+      <div class="resume-bullet"><div class="rb-dot"></div><strong style="color:var(--t1)">XAI:</strong> SHAP (TreeExplainer), LIME, DiCE counterfactuals, PDP, ALE plots, conformal prediction (MAPIE)</div>
+      <div class="resume-bullet"><div class="rb-dot"></div><strong style="color:var(--t1)">MLOps:</strong> CodeCarbon, ADWIN drift detection, Evidently AI, active learning, model versioning</div>
+      <div class="resume-bullet"><div class="rb-dot"></div><strong style="color:var(--t1)">Backend:</strong> FastAPI, Pydantic, SQLAlchemy, async Python, Redis, WebSockets, REST API design</div>
+      <div class="resume-bullet"><div class="rb-dot"></div><strong style="color:var(--t1)">Database:</strong> PostgreSQL, TimescaleDB, Redis, SQL schema design, migrations</div>
+      <div class="resume-bullet"><div class="rb-dot"></div><strong style="color:var(--t1)">DevOps:</strong> Docker, Docker Compose, GitHub Actions CI/CD, Render, Vercel, Sentry</div>
+    </div>
+  </div>
+
+  <div class="interview-card">
+    <div class="resume-title" style="margin-bottom:24px">Interview Script — What to Say</div>
+
+    <div class="interview-q">Q: "Tell me about your most advanced project."</div>
+    <div class="interview-a">"I built NeuralCarbon — an autonomous carbon decision-intelligence platform. The ML model isn't just a predictor, it's the brain of a multi-layer system. At the core is a LightGBM ensemble with monotone physics constraints — temperature must always increase predicted emissions, vacuum must decrease them. Around that I built conformal prediction intervals that give mathematically guaranteed 90% coverage, a DiCE counterfactual engine that answers 'what must change to reduce emissions by 20%', and an ADWIN drift detector that triggers retraining when the model starts degrading in production. The whole thing is containerized with Docker, deployed on Render and Vercel, with a GitHub Actions CI/CD pipeline that runs model regression tests on every push."</div>
+
+    <div class="interview-q">Q: "What's unique about the explainability?"</div>
+    <div class="interview-a">"Most XAI projects just show a SHAP bar chart and call it done. I run both SHAP and LIME on every prediction and compute an agreement score between them — features where they disagree get flagged as 'uncertain explanation, treat with caution.' I also built a policy simulation layer where a compliance officer can type in any emission limit and the system sweeps the full historical dataset to return compliance rate, required operational changes, and carbon credit impact. That's the difference between explaining a prediction and making a decision."</div>
+
+    <div class="interview-q">Q: "How is this different from a student project?"</div>
+    <div class="interview-a">"Three things. First, active learning feedback loop — operators submit actual readings after predictions, those labels queue to PostgreSQL, and when 200+ accumulate the system auto-triggers retraining. Second, the model audits its own environmental cost — CodeCarbon wraps every inference batch and the UI shows a 'Model Carbon Ledger', because a system predicting CO₂ should measure its own CO₂. Third, concept drift is handled operationally — not just detected, but responded to: drift severity HIGH auto-queues a retrain job. These aren't features you add. They're the features that make a system production-ready."</div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- BUILD ORDER -->
+<section class="section">
+  <div class="section-tag">11 · Build Order</div>
+  <h2>Implementation Sequence</h2>
+  <p class="section-desc">Build in this order. Each phase is a standalone demo you can show even before the next phase is done.</p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
+    <div class="deploy-card">
+      <div class="deploy-layer">Phase 1 — Week 1 (Show this immediately)</div>
+      <div class="deploy-title">FastAPI Core</div>
+      <div class="deploy-item">Load models at startup</div>
+      <div class="deploy-item">/predict endpoint live</div>
+      <div class="deploy-item">/explain endpoint (SHAP)</div>
+      <div class="deploy-item">Pydantic validation</div>
+      <div class="deploy-item" style="color:var(--teal);border:none">✓ Deployable demo</div>
+    </div>
+    <div class="deploy-card">
+      <div class="deploy-layer">Phase 2 — Week 2</div>
+      <div class="deploy-title">Intelligence Layer</div>
+      <div class="deploy-item">/prescribe DiCE endpoint</div>
+      <div class="deploy-item">/drift/status ADWIN</div>
+      <div class="deploy-item">Redis SHAP cache</div>
+      <div class="deploy-item">DB schema + writes</div>
+      <div class="deploy-item" style="color:var(--teal);border:none">✓ Full backend done</div>
+    </div>
+    <div class="deploy-card">
+      <div class="deploy-layer">Phase 3 — Week 3</div>
+      <div class="deploy-title">Frontend + Deploy</div>
+      <div class="deploy-item">React Command Center screen</div>
+      <div class="deploy-item">Prescription Studio screen</div>
+      <div class="deploy-item">Docker Compose stack</div>
+      <div class="deploy-item">GitHub Actions CI/CD</div>
+      <div class="deploy-item" style="color:var(--teal);border:none">✓ Production live</div>
+    </div>
+    <div class="deploy-card">
+      <div class="deploy-layer">Phase 4 — Week 4</div>
+      <div class="deploy-title">Advanced Features</div>
+      <div class="deploy-item">Policy Simulator screen</div>
+      <div class="deploy-item">/simulate/policy endpoint</div>
+      <div class="deploy-item">Weather API auto-fill</div>
+      <div class="deploy-item">Model Intelligence Hub</div>
+      <div class="deploy-item" style="color:var(--teal);border:none">✓ Startup-grade</div>
+    </div>
+    <div class="deploy-card">
+      <div class="deploy-layer">Phase 5 — Week 5</div>
+      <div class="deploy-title">Wow Features</div>
+      <div class="deploy-item">Carbon Ledger UI</div>
+      <div class="deploy-item">Active learning queue</div>
+      <div class="deploy-item">ESG auto-PDF report</div>
+      <div class="deploy-item">SHAP/LIME agreement score</div>
+      <div class="deploy-item" style="color:var(--teal);border:none">✓ Interview-ready</div>
+    </div>
+    <div class="deploy-card">
+      <div class="deploy-layer">Phase 6 — Week 6</div>
+      <div class="deploy-title">Polish + Portfolio</div>
+      <div class="deploy-item">GitHub README + GIF demo</div>
+      <div class="deploy-item">Architecture diagram</div>
+      <div class="deploy-item">2-page system paper</div>
+      <div class="deploy-item">LinkedIn post + live URL</div>
+      <div class="deploy-item" style="color:var(--teal);border:none">✓ Resume submitted</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div style="font-family:var(--display);font-size:18px;font-weight:800;color:var(--teal);margin-bottom:8px">NeuralCarbon System Blueprint</div>
+  <div>Built on top of your CarbonSense ML pipeline (Weeks 1–7) · Every component maps to code you already wrote</div>
+  <div style="margin-top:6px">LightGBM · XGBoost · SHAP · LIME · DiCE · MAPIE · CodeCarbon · ADWIN · Evidently · FastAPI · Docker · TimescaleDB · Redis</div>
+</footer>
+
+<script>
+// Scroll progress
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  const pct = (window.scrollY / (h.scrollHeight - h.clientHeight)) * 100;
+  document.getElementById('sp').style.width = pct + '%';
+});
+
+// Active nav
+const sections = document.querySelectorAll('[id]');
+const navLinks = document.querySelectorAll('.nav-link');
+window.addEventListener('scroll', () => {
+  let cur = '';
+  sections.forEach(s => { if (window.scrollY >= s.offsetTop - 80) cur = s.id; });
+  navLinks.forEach(l => {
+    l.classList.toggle('active', l.getAttribute('href') === '#' + cur);
+  });
+});
+</script>
+</body>
+</html>
