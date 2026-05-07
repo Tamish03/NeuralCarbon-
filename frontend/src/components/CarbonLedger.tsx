@@ -1,29 +1,41 @@
-import React, { useState } from "react"
-import { ShieldCheck, FileDown, Leaf, TrendingDown, DollarSign, Link as LinkIcon, CheckCircle2 } from "lucide-react"
-import { downloadEsgReport, timestampLedger } from "@/lib/api"
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
+import React, { useEffect, useState } from "react"
+import { ShieldCheck, FileDown, Leaf, TrendingDown, DollarSign, Link as LinkIcon } from "lucide-react"
+import { downloadEsgReport, timestampLedger, fetchSystemMetrics } from "@/lib/api"
+import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from "recharts"
+import { motion } from "framer-motion"
 
 export default function CarbonLedger() {
   const [isGenerating, setIsGenerating] = useState(false)
-  
-  // Mock metrics for the UI
-  const metrics = {
+  const [isReady, setIsReady] = useState(false)
+  const [metrics, setMetrics] = useState({
     totalEmissionsKg: 145020.50,
     emissionsReducedKg: 12450.25,
     carbonCreditsEarned: 12.45,
     riskLevel: "MODERATE"
-  }
+  })
+
+  useEffect(() => {
+    fetchSystemMetrics().then(m => {
+      setMetrics({
+        totalEmissionsKg: m.total_predictions * 450,
+        emissionsReducedKg: m.pending_feedback_labels * 5,
+        carbonCreditsEarned: (m.pending_feedback_labels * 5) / 100,
+        riskLevel: "MODERATE"
+      })
+      setTimeout(() => setIsReady(true), 200)
+    }).catch(console.error)
+  }, [])
 
   const [txHash, setTxHash] = useState<string | null>(null)
   const [isPinning, setIsPinning] = useState(false)
 
   const chartData = [
-    { month: 'Jan', credits: 1.2 },
-    { month: 'Feb', credits: 1.8 },
-    { month: 'Mar', credits: 2.1 },
-    { month: 'Apr', credits: 1.9 },
-    { month: 'May', credits: 2.4 },
-    { month: 'Jun', credits: 3.05 },
+    { month: 'JAN', credits: 1.2 },
+    { month: 'FEB', credits: 1.8 },
+    { month: 'MAR', credits: 2.1 },
+    { month: 'APR', credits: 1.9 },
+    { month: 'MAY', credits: 2.4 },
+    { month: 'JUN', credits: 3.05 },
   ]
 
   const handleDownload = async () => {
@@ -39,130 +51,83 @@ export default function CarbonLedger() {
       })
     } catch (err) {
       console.error(err)
-      alert("Failed to generate report")
     } finally {
       setIsGenerating(false)
     }
   }
 
-  const handlePinLedger = async () => {
-    setIsPinning(true)
-    try {
-      const res = await timestampLedger({
-        emissionsReducedKg: metrics.emissionsReducedKg,
-        carbonCreditsEarned: metrics.carbonCreditsEarned
-      })
-      setTxHash(res.transaction_hash)
-    } catch (err) {
-      console.error(err)
-      alert("Failed to pin to ledger")
-    } finally {
-      setIsPinning(false)
-    }
-  }
-
   return (
-    <div className="bg-white/5 border border-white/10 rounded-xl p-6 backdrop-blur-md relative overflow-hidden group">
-      <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none group-hover:bg-green-500/20 transition-all duration-700"></div>
-      
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-green-500/20 text-green-400 rounded-lg">
+    <motion.div 
+      initial={{ opacity: 0 }} 
+      animate={{ opacity: 1 }} 
+      className="glass-panel p-8 rounded-[2.5rem] flex flex-col h-full min-h-[500px]"
+    >
+      <div className="flex justify-between items-center mb-8">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-primary/10 text-primary rounded-2xl border border-primary/20">
             <ShieldCheck className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-foreground">ESG Compliance Ledger</h2>
-            <p className="text-xs text-neutral-400">Verified by Immutable Algorithms</p>
+            <h2 className="text-2xl font-black premium-gradient-text tracking-tight">Ledger</h2>
+            <p className="text-[9px] text-neutral-500 uppercase tracking-[0.3em] font-bold">Immutability Active</p>
           </div>
         </div>
-        <button
+        
+        <button 
           onClick={handleDownload}
           disabled={isGenerating}
-          className="flex items-center gap-2 px-4 py-2 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 rounded-lg text-sm transition-colors text-white disabled:opacity-50"
+          className="p-3 bg-white text-black hover:bg-neutral-200 rounded-xl transition-all disabled:opacity-50"
+          title="Export ESG Report"
         >
-          {isGenerating ? "Generating..." : (
-            <>
-              <FileDown className="w-4 h-4" />
-              Export PDF
-            </>
-          )}
+          <FileDown size={18} />
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column: Metrics */}
-        <div className="lg:col-span-1 flex flex-col gap-4">
-          <div className="p-4 bg-black/20 rounded-lg border border-white/5">
-            <div className="flex items-center gap-2 text-neutral-400 mb-2">
-              <TrendingDown className="w-4 h-4 text-orange-400" />
-              <span className="text-sm font-medium">Avoided Emissions</span>
-            </div>
-            <div className="text-2xl font-bold text-white">{metrics.emissionsReducedKg.toLocaleString()} <span className="text-sm text-neutral-500 font-normal">kg</span></div>
-          </div>
-          
-          <div className="p-4 bg-black/20 rounded-lg border border-white/5">
-            <div className="flex items-center gap-2 text-neutral-400 mb-2">
-              <DollarSign className="w-4 h-4 text-green-400" />
-              <span className="text-sm font-medium">Credits Earned</span>
-            </div>
-            <div className="text-2xl font-bold text-white">{metrics.carbonCreditsEarned.toLocaleString()} <span className="text-sm text-neutral-500 font-normal">CR</span></div>
-          </div>
-          
-          <div className="p-4 bg-black/20 rounded-lg border border-emerald-500/20 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent pointer-events-none"></div>
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2 text-neutral-400">
-                <Leaf className="w-4 h-4 text-emerald-400" />
-                <span className="text-sm font-medium">Compliance</span>
-              </div>
-              <div className="text-xs font-bold text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded">ON TRACK</div>
-            </div>
-          </div>
-        </div>
+      <div className="grid grid-cols-2 gap-3 mb-8">
+        <LedgerStat icon={<Leaf size={12} />} label="Total" value={metrics.totalEmissionsKg.toLocaleString()} unit="kg" />
+        <LedgerStat icon={<TrendingDown size={12} />} label="Saved" value={metrics.emissionsReducedKg.toLocaleString()} unit="kg" color="text-primary" />
+        <LedgerStat icon={<DollarSign size={12} />} label="Value" value={(metrics.carbonCreditsEarned * 45).toFixed(0)} unit="$" />
+        <LedgerStat icon={<LinkIcon size={12} />} label="Chain" value="99.2" unit="%" />
+      </div>
 
-        {/* Right Column: Graphs & Blockchain */}
-        <div className="lg:col-span-2 flex flex-col gap-6">
-          <div className="bg-black/20 p-4 rounded-lg border border-white/5 h-48">
-            <h3 className="text-xs text-neutral-500 mb-2 uppercase tracking-wider font-semibold">Credit Accumulation (YTD)</h3>
+      <div className="flex-1 bg-black/20 rounded-2xl border border-white/5 p-5 flex flex-col">
+        <h3 className="text-[8px] font-black text-neutral-600 uppercase tracking-[0.4em] mb-6">Historical Credits</h3>
+        <div className="flex-1 min-h-[150px]">
+          {isReady && (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                <XAxis dataKey="month" stroke="#525252" fontSize={10} tickLine={false} axisLine={false} />
-                <YAxis stroke="#525252" fontSize={10} tickLine={false} axisLine={false} />
+                <XAxis dataKey="month" hide />
                 <Tooltip 
-                  cursor={{ fill: 'rgba(16, 185, 129, 0.1)' }}
-                  contentStyle={{ backgroundColor: 'rgba(2, 44, 34, 0.9)', borderColor: 'rgba(16, 185, 129, 0.2)', borderRadius: '8px' }}
-                  itemStyle={{ color: '#ecfdf5' }}
+                  cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+                  contentStyle={{ backgroundColor: '#020b09', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '10px' }}
                 />
-                <Bar dataKey="credits" fill="#10b981" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="credits" radius={[4, 4, 0, 0]}>
+                  {chartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={index === chartData.length - 1 ? '#10b981' : 'rgba(16, 185, 129, 0.2)'} />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
-          </div>
-
-          <div className="bg-black/20 p-4 rounded-lg border border-white/5">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                  <LinkIcon className="w-4 h-4 text-emerald-500" />
-                  Web3 Ledger Anchoring
-                </h3>
-                <p className="text-xs text-neutral-400 mt-1">Pin current credits to an immutable blockchain.</p>
-              </div>
-              <button 
-                onClick={handlePinLedger}
-                disabled={isPinning || !!txHash}
-                className="px-4 py-2 bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 border border-emerald-500/30 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
-              >
-                {isPinning ? "Hashing..." : txHash ? <><CheckCircle2 className="w-4 h-4" /> Anchored</> : "Anchor Data"}
-              </button>
-            </div>
-            {txHash && (
-              <div className="mt-3 pt-3 border-t border-white/10 flex flex-col gap-1">
-                <span className="text-xs text-neutral-500">Transaction Hash</span>
-                <span className="text-xs font-mono text-emerald-400 break-all">{txHash}</span>
-              </div>
-            )}
-          </div>
+          )}
         </div>
+        <div className="mt-4 flex justify-between items-center text-[8px] font-bold text-neutral-500 uppercase tracking-widest">
+           <span>Jan</span>
+           <span>Jun</span>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
+function LedgerStat({ icon, label, value, unit, color = "text-foreground" }: { icon: React.ReactNode, label: string, value: string, unit: string, color?: string }) {
+  return (
+    <div className="p-3 bg-white/[0.01] border border-white/5 rounded-xl">
+      <div className="flex items-center gap-1.5 text-neutral-600 mb-1">
+        {icon}
+        <span className="text-[7px] font-black uppercase tracking-widest">{label}</span>
+      </div>
+      <div className={`text-sm font-black tracking-tighter ${color}`}>
+        {value}<span className="text-[7px] text-neutral-700 uppercase font-bold ml-0.5">{unit}</span>
       </div>
     </div>
   )

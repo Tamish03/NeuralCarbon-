@@ -16,3 +16,4 @@ joblib
 sqlalchemy
 redis
 reportlab
+httpx

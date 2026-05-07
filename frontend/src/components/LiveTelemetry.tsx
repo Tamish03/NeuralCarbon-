@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react"
 import { fetchPrediction, fetchDriftStatus } from "@/lib/api"
 import { motion } from "framer-motion"
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
+import { Activity } from "lucide-react"
 
 interface PredictionData {
   co2_kg: number;
@@ -65,21 +66,32 @@ export default function LiveTelemetry({ currentInputs }: { currentInputs: Record
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {/* CO2 Emissions Card */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-panel p-6 rounded-xl md:col-span-2 relative overflow-hidden flex flex-col">
-        <div className={`absolute top-0 left-0 w-1 h-full ${isCritical ? 'bg-status-high' : 'bg-status-low'}`}></div>
+      <motion.div 
+        initial={{ opacity: 0, x: -20 }} 
+        animate={{ opacity: 1, x: 0 }} 
+        className="glass-panel p-8 rounded-2xl md:col-span-2 relative overflow-hidden flex flex-col group/card"
+      >
+        <div className={`absolute top-0 left-0 w-1.5 h-full ${isCritical ? 'bg-status-high shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'bg-status-low shadow-[0_0_15px_rgba(16,185,129,0.5)]'}`}></div>
         
-        <div className="flex justify-between items-start">
+        <div className="flex justify-between items-start relative z-10">
           <div>
-            <h3 className="text-neutral-400 font-medium mb-1">Current CO₂ Output</h3>
-            <div className="flex items-end gap-3 mt-2">
-              <span className="text-5xl font-bold">{data?.co2_kg?.toFixed(1)}</span>
-              <span className="text-neutral-500 mb-1">kg / hour</span>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_#10b981]"></span>
+              <h3 className="text-neutral-400 font-bold text-xs uppercase tracking-[0.2em]">Real-time Telemetry</h3>
+            </div>
+            <div className="flex items-baseline gap-3">
+              <span className="text-5xl font-black premium-gradient-text tracking-tighter">
+                {data?.co2_kg?.toFixed(1)}
+              </span>
+              <span className="text-neutral-500 font-medium text-sm">kg / hr</span>
             </div>
           </div>
           <div className="text-right">
-            <p className="text-neutral-500 text-sm">Risk Level</p>
-            <div className={`mt-1 inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold tracking-wider ${
-              isCritical ? 'bg-status-high/20 text-status-high border border-status-high/30' : 'bg-primary/20 text-primary border border-primary/30'
+            <p className="text-neutral-500 text-[10px] uppercase font-bold tracking-wider mb-2">System Risk</p>
+            <div className={`inline-flex items-center px-4 py-1.5 rounded-full text-xs font-black tracking-widest uppercase transition-all duration-500 ${
+              isCritical 
+                ? 'bg-status-high/10 text-status-high border border-status-high/20 shadow-[0_0_20px_rgba(239,68,68,0.1)]' 
+                : 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_20px_rgba(16,185,129,0.1)]'
             }`}>
               {data?.risk_level}
             </div>
@@ -116,22 +128,38 @@ export default function LiveTelemetry({ currentInputs }: { currentInputs: Record
       </motion.div>
 
       {/* Drift Monitor Card */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-panel p-6 rounded-xl">
-        <h3 className="text-neutral-400 font-medium mb-4">ADWIN Concept Drift</h3>
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-neutral-500">Status</span>
-            <span className={`text-sm font-semibold ${drift?.drift_detected ? 'text-status-high' : 'text-status-low'}`}>
-              {drift?.drift_detected ? 'DRIFT DETECTED' : 'STABLE'}
+      <motion.div 
+        initial={{ opacity: 0, x: 20 }} 
+        animate={{ opacity: 1, x: 0 }} 
+        transition={{ delay: 0.1 }} 
+        className="glass-panel p-8 rounded-2xl relative"
+      >
+        <div className="flex items-center gap-2 mb-6">
+          <Activity className="w-4 h-4 text-primary" />
+          <h3 className="text-neutral-400 font-bold text-xs uppercase tracking-widest">ADWIN Detector</h3>
+        </div>
+
+        <div className="space-y-6">
+          <div className="flex justify-between items-center bg-black/30 p-3 rounded-lg border border-white/5">
+            <span className="text-xs text-neutral-500 uppercase font-bold tracking-tighter">Drift Status</span>
+            <div className="flex items-center gap-2">
+              <span className={`w-2 h-2 rounded-full ${drift?.drift_detected ? 'bg-status-high animate-ping' : 'bg-status-low'}`}></span>
+              <span className={`text-xs font-black tracking-widest ${drift?.drift_detected ? 'text-status-high' : 'text-status-low'}`}>
+                {drift?.drift_detected ? 'ACTIVE' : 'STABLE'}
+              </span>
+            </div>
+          </div>
+          
+          <div className="flex justify-between items-center px-1">
+            <span className="text-xs text-neutral-500 font-bold">Severity</span>
+            <span className={`text-xs font-black tracking-widest ${drift?.severity === 'HIGH' ? 'text-status-high' : 'text-neutral-300'}`}>
+              {drift?.severity}
             </span>
           </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-neutral-500">Severity</span>
-            <span className="text-sm">{drift?.severity}</span>
-          </div>
-          <div className="mt-4 pt-4 border-t border-white/5">
-            <p className="text-xs text-neutral-400 leading-relaxed">
-              {drift?.recommendation}
+
+          <div className="mt-4 p-4 rounded-xl bg-primary/5 border border-primary/10">
+            <p className="text-[11px] text-neutral-400 leading-relaxed italic font-medium">
+              "{drift?.recommendation}"
             </p>
           </div>
         </div>

@@ -13,3 +13,5 @@ class PredictionResponse(BaseModel):
     upper_bound: float = Field(..., description="Conformal prediction upper bound")
     cluster_id: int = Field(..., description="Operational mode cluster ID (0-3)")
     risk_level: str = Field(..., description="Risk level (LOW/MODERATE/HIGH/CRITICAL)")
+    model_emission_g: float = Field(0.0, description="CO2 cost of this specific inference in grams")
+    total_model_emissions_g: float = Field(0.0, description="Cumulative CO2 cost of the AI system")

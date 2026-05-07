@@ -1,26 +1,44 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-import random
+import os
+
+try:
+    import httpx
+    HAS_HTTPX = True
+except ImportError:
+    HAS_HTTPX = False
 
 router = APIRouter()
 
 class WeatherResponse(BaseModel):
-    AT: float # Ambient Temperature
-    AP: float # Atmospheric Pressure
-    RH: float # Relative Humidity
+    AT: float
+    AP: float
+    RH: float
     location: str
 
 @router.get("/", response_model=WeatherResponse)
-def get_current_weather(lat: float = 40.7128, lon: float = -74.0060):
-    """
-    Fetches real-time environmental data (AT, AP, RH) to auto-fill the telemetry.
-    Currently mocked as fallback since OpenWeatherMap API key is not provided.
-    In production, this would make an HTTP request to api.openweathermap.org.
-    """
-    # Mocking realistic operational values for testing
+async def get_current_weather(lat: float = 40.7128, lon: float = -74.0060):
+    api_key = os.getenv("OPENWEATHER_API_KEY")
+    
+    if HAS_HTTPX and api_key:
+        url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={api_key}&units=metric"
+        try:
+            async with httpx.AsyncClient(timeout=2.0) as client:
+                response = await client.get(url)
+                if response.status_code == 200:
+                    data = response.json()
+                    return WeatherResponse(
+                        AT=data["main"]["temp"],
+                        AP=data["main"]["pressure"],
+                        RH=data["main"]["humidity"],
+                        location=f"{data['name']}, {data['sys']['country']}"
+                    )
+        except Exception as e:
+            print(f"Weather Fetch Warning: {e}")
+
     return WeatherResponse(
-        AT=round(random.uniform(15.0, 35.0), 2),
-        AP=round(random.uniform(1000.0, 1025.0), 2),
-        RH=round(random.uniform(30.0, 85.0), 2),
-        location="Mocked Sensor Location"
+        AT=24.5,
+        AP=1013.25,
+        RH=60.0,
+        location="Fallback (Station Offline)"
     )

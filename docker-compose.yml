@@ -1,0 +1,36 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_URL=${REDIS_URL:-redis://cache:6379}
+      - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
+      - WEB3_PROVIDER_URL=${WEB3_PROVIDER_URL}
+      - WALLET_PRIVATE_KEY=${WALLET_PRIVATE_KEY}
+    volumes:
+      - ./backend/neuralcarbon.db:/app/neuralcarbon.db
+    depends_on:
+      - cache
+
+  cache:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  drift-worker:
+    build: ./backend
+    command: python workers/drift_monitor.py
+    environment:
+      - REDIS_URL=${REDIS_URL:-redis://cache:6379}
+    depends_on:
+      - backend
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
+    depends_on:
+      - backend

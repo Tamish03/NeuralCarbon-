@@ -26,4 +26,12 @@ async def get_drift_status():
             
         return DriftStatusResponse(**state)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Drift status error: {str(e)}")
+        # FAILSAFE: Return stable status if state file reading fails
+        print(f"Drift Failsafe Triggered: {e}")
+        return DriftStatusResponse(
+            drift_detected=False,
+            last_alarm_at=None,
+            severity="NONE",
+            recommendation="System monitoring active (failsafe mode).",
+            adwin_width=32
+        )

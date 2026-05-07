@@ -3,6 +3,11 @@ import json
 import time
 from datetime import datetime
 from river.drift import ADWIN
+import sys
+
+# Add backend to path to import app
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+from app.core.db import SessionLocal, DriftEvent
 
 # Paths
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
@@ -45,6 +50,19 @@ class DriftMonitorWorker:
             
         self.state["adwin_width"] = self.adwin.width
         self.save_state()
+        
+        # Log to DB if drift detected
+        if self.adwin.drift_detected:
+            db = SessionLocal()
+            try:
+                event = DriftEvent(
+                    severity=self.state["severity"],
+                    adwin_width=self.state["adwin_width"]
+                )
+                db.add(event)
+                db.commit()
+            finally:
+                db.close()
 
 def run_worker_loop():
     print("Starting ADWIN Drift Monitor Worker...")

@@ -1,100 +1,46 @@
-const API_BASE = "http://localhost:8000/api/v1"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/api/v1"
 
-export async function fetchPrediction(features: Record<string, number>) {
-  const res = await fetch(`${API_BASE}/predict/`, {
-    method: "POST",
+async function apiRequest(endpoint: string, method = "GET", body?: any, isBlob = false) {
+  const options: RequestInit = {
+    method,
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(features),
-  });
-  if (!res.ok) throw new Error("Failed to fetch prediction");
-  return res.json();
-}
+  }
+  if (body) options.body = JSON.stringify(body)
 
-export async function fetchExplanation(features: Record<string, number>) {
-  const res = await fetch(`${API_BASE}/explain/`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(features),
-  });
-  if (!res.ok) throw new Error("Failed to fetch explanation");
-  return res.json();
-}
-
-export async function fetchPrescription(features: Record<string, number>, targetReduction = 10.0, maxScenarios = 3) {
-  const res = await fetch(`${API_BASE}/prescribe/`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ...features, target_reduction_pct: targetReduction, max_scenarios: maxScenarios }),
-  });
-  if (!res.ok) throw new Error("Failed to fetch prescription");
-  return res.json();
-}
-
-export async function fetchDriftStatus() {
-  const res = await fetch(`${API_BASE}/drift/status`);
-  if (!res.ok) throw new Error("Failed to fetch drift status");
-  return res.json();
-}
-
-export async function fetchPolicySimulation(baseInputs: Record<string, number>, vMin = 35.0, vMax = 75.0) {
-  const res = await fetch(`${API_BASE}/simulate/policy/`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      base_AT: baseInputs.AT,
-      base_V: baseInputs.V,
-      base_AP: baseInputs.AP,
-      base_RH: baseInputs.RH,
-      v_sweep_min: vMin,
-      v_sweep_max: vMax,
-      v_sweep_steps: 20
-    }),
-  });
-  if (!res.ok) throw new Error("Failed to fetch policy simulation");
-  return res.json();
-}
-
-export async function fetchWeather() {
-  const res = await fetch(`${API_BASE}/weather/`);
-  if (!res.ok) throw new Error("Failed to fetch weather");
-  return res.json();
-}
-
-export async function submitFeedback(payload: any) {
-  const res = await fetch(`${API_BASE}/feedback/`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) throw new Error("Failed to submit feedback");
-  return res.json();
-}
-
-export async function downloadEsgReport(payload: any) {
-  const res = await fetch(`${API_BASE}/report/esg`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) throw new Error("Failed to generate ESG report");
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, options)
+  if (!response.ok) throw new Error(`API Error: ${response.statusText}`)
   
-  const blob = await res.blob();
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `esg_report_${payload.report_period.replace(' ', '_')}.pdf`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  window.URL.revokeObjectURL(url);
+  return isBlob ? response.blob() : response.json()
 }
 
-export async function timestampLedger(payload: { emissionsReducedKg: number, carbonCreditsEarned: number }) {
-  const res = await fetch(`${API_BASE}/ledger/timestamp`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) throw new Error("Failed to anchor to ledger");
-  return res.json();
+export const fetchPrediction = (features: Record<string, number>) => apiRequest("/predict/", "POST", features)
+export const fetchExplanation = (features: Record<string, number>) => apiRequest("/explain/", "POST", features)
+export const fetchPrescription = (features: Record<string, number>, targetReduction = 5.0, maxScenarios = 3) => 
+  apiRequest("/prescribe/", "POST", { ...features, target_reduction_pct: targetReduction, max_scenarios: maxScenarios })
+
+export const fetchDriftStatus = () => apiRequest("/drift/status")
+export const fetchPolicySimulation = (inputs: Record<string, number>) => 
+  apiRequest("/simulate/policy/", "POST", {
+    base_AT: inputs.AT,
+    base_V: inputs.V,
+    base_AP: inputs.AP,
+    base_RH: inputs.RH,
+    v_sweep_min: Math.max(10, inputs.V - 10),
+    v_sweep_max: Math.min(60, inputs.V + 10),
+    v_sweep_steps: 20
+  })
+export const fetchWeather = () => apiRequest("/weather/")
+export const submitFeedback = (feedback: any) => apiRequest("/feedback/", "POST", feedback)
+export const fetchSystemMetrics = () => apiRequest("/metrics/")
+export const timestampLedger = (data: any) => apiRequest("/ledger/timestamp", "POST", data)
+
+export const downloadEsgReport = async (data: any) => {
+  const blob = await apiRequest("/report/esg", "POST", data, true)
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement("a")
+  link.href = url
+  link.setAttribute("download", `ESG_Report_${Date.now()}.pdf`)
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
 }
