@@ -11,7 +11,7 @@ mapie==0.8.0
 shap
 lime
 dice-ml
-river
+scipy
 joblib
 sqlalchemy
 redis

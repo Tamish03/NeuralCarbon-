@@ -1,8 +1,9 @@
 import os
 import json
 import time
+import numpy as np
+from scipy import stats
 from datetime import datetime
-from river.drift import ADWIN
 import sys
 
 # Add backend to path to import app
@@ -15,13 +16,17 @@ STATE_FILE = os.path.join(BASE_DIR, "backend", "workers", "drift_state.json")
 
 class DriftMonitorWorker:
     def __init__(self):
-        self.adwin = ADWIN()
+        # Neural Window for Drift Detection
+        self.reference_window = []
+        self.current_window = []
+        self.window_size = 50
+        
         self.state = {
             "drift_detected": False,
             "last_alarm_at": None,
             "severity": "NONE",
             "recommendation": "System stable. Continue monitoring.",
-            "adwin_width": self.adwin.width
+            "drift_score": 0.0
         }
         
     def save_state(self):
@@ -30,61 +35,64 @@ class DriftMonitorWorker:
             json.dump(self.state, f, indent=4)
             
     def update(self, val: float):
-        """
-        Updates the ADWIN detector with a new value.
-        Usually, this is the residual error (actual - predicted).
-        For testing purposes, we can just feed it random data or values from a stream.
-        """
-        _ = self.adwin.update(val)
-        
-        if self.adwin.drift_detected:
-            self.state["drift_detected"] = True
-            self.state["last_alarm_at"] = datetime.utcnow().isoformat()
-            self.state["severity"] = "HIGH"
-            self.state["recommendation"] = "Significant concept drift detected. Triggering automated retraining pipeline."
-            print(f"[DRIFT ALARM] Drift detected at {self.state['last_alarm_at']}")
-        else:
-            # Optionally reset state if conditions normalize
-            # self.state["drift_detected"] = False
-            pass
+        # Build up reference window first
+        if len(self.reference_window) < self.window_size:
+            self.reference_window.append(val)
+            return
+
+        # Build current window
+        self.current_window.append(val)
+        if len(self.current_window) > self.window_size:
+            self.current_window.pop(0)
+
+        # Statistical Drift Detection (K-S Test)
+        if len(self.current_window) == self.window_size:
+            # Compare distributions of reference vs current
+            ks_stat, p_value = stats.ks_2samp(self.reference_window, self.current_window)
             
-        self.state["adwin_width"] = self.adwin.width
-        self.save_state()
-        
-        # Log to DB if drift detected
-        if self.adwin.drift_detected:
-            db = SessionLocal()
-            try:
-                event = DriftEvent(
-                    severity=self.state["severity"],
-                    adwin_width=self.state["adwin_width"]
-                )
-                db.add(event)
-                db.commit()
-            finally:
-                db.close()
+            # If p-value is extremely low, distributions have shifted significantly
+            drift_detected = p_value < 0.01 
+            self.state["drift_score"] = float(ks_stat)
+            
+            if drift_detected:
+                self.state["drift_detected"] = True
+                self.state["last_alarm_at"] = datetime.utcnow().isoformat()
+                self.state["severity"] = "HIGH"
+                self.state["recommendation"] = "Significant distribution shift detected. Triggering recalibration."
+                
+                # Log to DB
+                db = SessionLocal()
+                try:
+                    event = DriftEvent(
+                        severity=self.state["severity"],
+                        adwin_width=self.window_size # Logged as window size for schema compatibility
+                    )
+                    db.add(event)
+                    db.commit()
+                finally:
+                    db.close()
+            else:
+                self.state["drift_detected"] = False
+                
+            self.save_state()
 
 def run_worker_loop():
-    print("Starting ADWIN Drift Monitor Worker...")
+    print("Starting Scipy-Powered Drift Monitor Worker...")
     monitor = DriftMonitorWorker()
     monitor.save_state()
     
-    # In a real system, this would listen to a Redis queue or DB table for new residuals.
-    # We will simulate a continuous data stream.
     import random
-    
     try:
         while True:
-            # Simulate stable environment
+            # Baseline residuals
             residual = random.gauss(0, 1.0)
             
-            # Occasionally inject drift (mean shift) based on time to demonstrate functionality
-            if time.time() % 60 > 45: # Drift for 15 seconds every minute
-                residual = random.gauss(5.0, 1.5)
+            # Inject drift every minute
+            if time.time() % 60 > 45:
+                residual = random.gauss(3.5, 1.0)
                 
             monitor.update(residual)
-            time.sleep(1) # process 1 value per second
-            
+            time.sleep(0.5)
     except KeyboardInterrupt:
         print("Stopping Drift Monitor Worker...")
 
