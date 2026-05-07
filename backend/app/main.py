@@ -16,6 +16,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "https://*.vercel.app",
+        "https://neural-carbon-9tgu4by9q-tamish03s-projects.vercel.app",
         "http://127.0.0.1:3000"
     ],
     allow_credentials=True,
