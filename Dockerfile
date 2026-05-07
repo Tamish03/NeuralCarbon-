@@ -9,7 +9,13 @@ RUN apt-get update && apt-get install -y \
     python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements from backend
+# Upgrade build tools
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+
+# Install numpy and pandas first (needed for river compilation)
+RUN pip install --no-cache-dir numpy pandas
+
+# Copy requirements and install the rest
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
